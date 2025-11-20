@@ -29,8 +29,12 @@
   - [x] T1.4: Implement utils.py
   - [x] T1.5: Implement logger.py
   - [x] T1.6: Setup unit test framework (20/20 tests passing)
-- [ ] Stage 2: Configuration and Task Management (Week 1, Second Half)
-  - [ ] T2.1-T2.6: Config extension and TaskManager
+- [x] Stage 2: Configuration and Task Management (Week 1, Second Half)
+  - [x] T2.1: Extended Config class with new configuration options
+  - [x] T2.2: Implemented NodeConfig and SoftwareConfig dataclasses
+  - [x] T2.3: Implemented comprehensive configuration validation
+  - [x] T2.4: Updated configuration template with new fields
+  - [x] T2.5-T2.6: Config tests (23/23 passing, total 43/43 tests)
 - [ ] Stage 3: Ansible Integration (Week 2, First Half)
   - [ ] T3.1-T3.9: AnsibleWrapper and Installers
 - [ ] Stage 4: Checker Implementation (Week 2, Middle)

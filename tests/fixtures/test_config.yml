@@ -13,7 +13,7 @@ nodes:
       host: '192.168.1.100'
       port: 22
       owner_user: 'testuser'
-      owner_key: '~/.ssh/test_id_rsa'
+      owner_pass: 'testpass123'
       super_user: 'root'
       super_pass: 'testpass123'
       install:
@@ -28,6 +28,7 @@ nodes:
         - python:
             version: '3.9.0'
             install_path: '/opt/python'
+            source: 'repository'
 
   - test_node_02:
       host: '192.168.1.101'
@@ -35,11 +36,13 @@ nodes:
       owner_user: 'testuser2'
       owner_pass: 'testpass456'
       super_user: 'root'
-      super_key: '~/.ssh/root_test_key'
+      super_pass: 'testpass456'
       install:
         - zookeeper:
             version: '3.7.1'
             install_path: '/opt/zookeeper'
+            source: 'repository'
             config:
               data_dir: '/data/zookeeper'
               client_port: 2181
+
