@@ -1,0 +1,13 @@
+---
+# Basic connectivity test playbook
+- name: Test SSH connectivity
+  hosts: all
+  gather_facts: yes
+  
+  tasks:
+    - name: Ping test
+      ping:
+    
+    - name: Get system information
+      debug:
+        msg: "Connected to {{ ansible_hostname }} running {{ ansible_distribution }} {{ ansible_distribution_version }}"

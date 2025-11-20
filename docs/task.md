@@ -35,8 +35,15 @@
   - [x] T2.3: Implemented comprehensive configuration validation
   - [x] T2.4: Updated configuration template with new fields
   - [x] T2.5-T2.6: Config tests (23/23 passing, total 43/43 tests)
-- [ ] Stage 3: Ansible Integration (Week 2, First Half)
-  - [ ] T3.1-T3.9: AnsibleWrapper and Installers
+- [x] Stage 3: Ansible Integration (Week 2, First Half)
+  - [x] T3.1: Implemented AnsibleWrapper for playbook execution
+  - [x] T3.2: Created BaseInstaller abstract class
+  - [x] T3.3: Implemented JavaInstaller (repository/URL/local)
+  - [x] T3.4: Implemented PythonInstaller (repository/source)
+  - [x] T3.5: Implemented ZookeeperInstaller (repository/URL)
+  - [x] T3.6: Created installer registry and factory
+  - [x] T3.7: Created basic Ansible playbooks
+  - [x] T3.8: Installer tests (12/12 passing, total 55/55 tests)
 - [ ] Stage 4: Checker Implementation (Week 2, Middle)
   - [ ] T4.1-T4.8: Pre-installation checkers
 - [ ] Stage 5: Execution Engine (Week 2, Second Half)
