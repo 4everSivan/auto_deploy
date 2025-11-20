@@ -1,0 +1,17 @@
+# Core dependencies
+ansible_runner<=2.3.6
+ansible<=8.5.0
+click<=8.1.8
+textual<=0.47.0
+pyyaml<=6.0.3
+
+# UI and formatting
+rich>=13.0.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.1
+
+# SSH connection
+paramiko>=3.3.0

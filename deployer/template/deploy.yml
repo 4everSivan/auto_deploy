@@ -1,0 +1,35 @@
+general:                                 # 基础配置（全局通用设置）
+  data_dir: './deploy_data'              # 系统运行时生成的日志、缓存、临时文件等存放目录
+
+log:                                     # 日志配置（控制日志输出）
+  level: 'INFO'                          # 日志级别：DEBUG（调试）| INFO（信息）| WARNING（警告）| ERROR（错误）
+  dir: './log'                           # 日志输出目录，所有日志文件将保存到此路径下
+
+nodes:                                   # 部署主机配置列表（支持多节点）
+  - node_01:                             # 节点 1 配置标识，可自定义（必须唯一）
+      host: '192.168.1.1'                # 节点主机 IP 地址或主机名
+      owner_user: 'sivan'                # 普通用户账号，用于基础文件操作或非 root 安装
+      owner_pass: 'linux123!@#'          # 普通用户登录密码
+      super_user: 'root'                 # 管理员用户（具有 sudo/root 权限）
+      super_pass: 'linux123!@#'          # 管理员用户密码
+      install:                           # 需要在该节点上安装的软件列表
+        - java:                          # 安装 Java 环境
+            install_path: '/usr/local'   # Java 安装路径
+        - python:                        # 安装 Python 运行环境
+            install_path: '/usr/local'   # Python 安装路径
+        - zookeeper:                     # 安装 Zookeeper 服务
+            install_path: '/usr/local'   # Zookeeper 安装路径
+
+  - node_02:                             # 节点 2 配置标识
+      host: '192.168.1.2'                # 节点主机 IP 地址或主机名
+      owner_user: 'peter'                # 普通用户账号
+      owner_pass: 'linux123!@#'          # 普通用户登录密码
+      super_user: 'root'                 # 管理员用户
+      super_pass: 'linux123!@#'          # 管理员用户密码
+      install:                           # 需要在该节点上安装的软件列表
+        - java:                          # 安装 Java 环境
+            install_path: '/usr/local'   # Java 安装路径
+        - python:                        # 安装 Python 运行环境
+            install_path: '/usr/local'   # Python 安装路径
+        - zookeeper:                     # 安装 Zookeeper 服务
+            install_path: '/usr/local'   # Zookeeper 安装路径

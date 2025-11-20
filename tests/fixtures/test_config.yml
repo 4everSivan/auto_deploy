@@ -1,0 +1,45 @@
+# Test configuration file for unit tests
+
+general:
+  data_dir: './test_deploy_data'
+  max_concurrent_nodes: 5
+
+log:
+  level: 'DEBUG'
+  dir: './test_deploy_data/log'
+
+nodes:
+  - test_node_01:
+      host: '192.168.1.100'
+      port: 22
+      owner_user: 'testuser'
+      owner_key: '~/.ssh/test_id_rsa'
+      super_user: 'root'
+      super_pass: 'testpass123'
+      install:
+        - java:
+            version: '11'
+            install_path: '/opt/java'
+            source: 'url'
+            source_path: 'https://example.com/jdk-11.tar.gz'
+            config:
+              set_java_home: true
+              add_to_path: true
+        - python:
+            version: '3.9.0'
+            install_path: '/opt/python'
+
+  - test_node_02:
+      host: '192.168.1.101'
+      port: 2222
+      owner_user: 'testuser2'
+      owner_pass: 'testpass456'
+      super_user: 'root'
+      super_key: '~/.ssh/root_test_key'
+      install:
+        - zookeeper:
+            version: '3.7.1'
+            install_path: '/opt/zookeeper'
+            config:
+              data_dir: '/data/zookeeper'
+              client_port: 2181
