@@ -209,3 +209,9 @@ __marimo__/
 # Project specific
 deploy_data/
 test_deploy_data/
+
+# IDE
+.idea
+
+# MACOS
+.DS_Store
