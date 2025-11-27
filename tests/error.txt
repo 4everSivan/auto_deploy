@@ -1,0 +1,134 @@
+(venv) ➜  auto_deploy git:(main) python -m pytest tests/test_task_manager.py tests/test_executor.py -v
+======================================================================================================================= test session starts ========================================================================================================================
+platform darwin -- Python 3.9.13, pytest-8.4.2, pluggy-1.6.0 -- /Users/sivan/code_project/my_project/python_project/auto_deploy/venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/sivan/code_project/my_project/python_project/auto_deploy
+plugins: mock-3.15.1, cov-7.0.0
+collected 24 items
+
+tests/test_task_manager.py::TestTask::test_task_initialization PASSED                                                                                                                                                                                        [  4%]
+tests/test_task_manager.py::TestTask::test_task_start PASSED                                                                                                                                                                                                 [  8%]
+tests/test_task_manager.py::TestTask::test_task_complete PASSED                                                                                                                                                                                              [ 12%]
+tests/test_task_manager.py::TestTask::test_task_fail PASSED                                                                                                                                                                                                  [ 16%]
+tests/test_task_manager.py::TestTask::test_task_skip PASSED                                                                                                                                                                                                  [ 20%]
+tests/test_task_manager.py::TestTask::test_task_update_progress PASSED                                                                                                                                                                                       [ 25%]
+tests/test_task_manager.py::TestTask::test_task_get_duration PASSED                                                                                                                                                                                          [ 29%]
+tests/test_task_manager.py::TestTask::test_task_to_dict PASSED                                                                                                                                                                                               [ 33%]
+tests/test_task_manager.py::TestTaskManager::test_task_manager_initialization PASSED                                                                                                                                                                         [ 37%]
+tests/test_task_manager.py::TestTaskManager::test_create_tasks PASSED                                                                                                                                                                                        [ 41%]
+tests/test_task_manager.py::TestTaskManager::test_get_task PASSED                                                                                                                                                                                            [ 45%]
+tests/test_task_manager.py::TestTaskManager::test_get_all_tasks PASSED                                                                                                                                                                                       [ 50%]
+tests/test_task_manager.py::TestTaskManager::test_get_statistics PASSED                                                                                                                                                                                      [ 54%]
+tests/test_task_manager.py::TestTaskManager::test_get_progress PASSED                                                                                                                                                                                        [ 58%]
+tests/test_task_manager.py::TestTaskManager::test_reset PASSED                                                                                                                                                                                               [ 62%]
+tests/test_executor.py::TestDeploymentExecutor::test_executor_initialization PASSED                                                                                                                                                                          [ 66%]
+tests/test_executor.py::TestDeploymentExecutor::test_register_callback PASSED                                                                                                                                                                                [ 70%]
+tests/test_executor.py::TestDeploymentExecutor::test_trigger_callback PASSED                                                                                                                                                                                 [ 75%]
+tests/test_executor.py::TestDeploymentExecutor::test_pause_resume PASSED                                                                                                                                                                                     [ 79%]
+tests/test_executor.py::TestDeploymentExecutor::test_stop PASSED                                                                                                                                                                                             [ 83%]
+tests/test_executor.py::TestDeploymentExecutor::test_get_software_config PASSED                                                                                                                                                                              [ 87%]
+tests/test_executor.py::TestDeploymentExecutor::test_get_installer FAILED                                                                                                                                                                                    [ 91%]
+tests/test_executor.py::TestDeploymentExecutor::test_has_check_errors PASSED                                                                                                                                                                                 [ 95%]
+tests/test_executor.py::TestDeploymentExecutor::test_run_checkers FAILED                                                                                                                                                                                     [100%]
+
+============================================================================================================================= FAILURES =============================================================================================================================
+____________________________________________________________________________________________________________ TestDeploymentExecutor.test_get_installer _____________________________________________________________________________________________________________
+
+args = (<tests.test_executor.TestDeploymentExecutor object at 0x105bce400>,), keywargs = {'executor': <deployer.executor.DeploymentExecutor object at 0x105e4c7c0>}
+
+    @wraps(func)
+    def patched(*args, **keywargs):
+>       with self.decoration_helper(patched,
+                                    args,
+                                    keywargs) as (newargs, newkeywargs):
+
+/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/unittest/mock.py:1333:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/contextlib.py:119: in __enter__
+    return next(self.gen)
+/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/unittest/mock.py:1315: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/contextlib.py:448: in enter_context
+    result = _cm_type.__enter__(cm)
+/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/unittest/mock.py:1404: in __enter__
+    original, local = self.get_original()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <unittest.mock._patch object at 0x10593a280>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+
+        original = DEFAULT
+        local = False
+
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <module 'deployer.executor' from '/Users/sivan/code_project/my_project/python_project/auto_deploy/deployer/executor.py'> does not have the attribute 'get_installer'
+
+/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/unittest/mock.py:1377: AttributeError
+_____________________________________________________________________________________________________________ TestDeploymentExecutor.test_run_checkers _____________________________________________________________________________________________________________
+
+args = (<tests.test_executor.TestDeploymentExecutor object at 0x105bce8b0>,), keywargs = {'executor': <deployer.executor.DeploymentExecutor object at 0x105fd19a0>}
+
+    @wraps(func)
+    def patched(*args, **keywargs):
+>       with self.decoration_helper(patched,
+                                    args,
+                                    keywargs) as (newargs, newkeywargs):
+
+/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/unittest/mock.py:1333:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/contextlib.py:119: in __enter__
+    return next(self.gen)
+/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/unittest/mock.py:1315: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/contextlib.py:448: in enter_context
+    result = _cm_type.__enter__(cm)
+/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/unittest/mock.py:1404: in __enter__
+    original, local = self.get_original()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <unittest.mock._patch object at 0x10593a7f0>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+
+        original = DEFAULT
+        local = False
+
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <module 'deployer.executor' from '/Users/sivan/code_project/my_project/python_project/auto_deploy/deployer/executor.py'> does not have the attribute 'CheckerManager'
+
+/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/unittest/mock.py:1377: AttributeError
+===================================================================================================================== short test summary info ======================================================================================================================
+FAILED tests/test_executor.py::TestDeploymentExecutor::test_get_installer - AttributeError: <module 'deployer.executor' from '/Users/sivan/code_project/my_project/python_project/auto_deploy/deployer/executor.py'> does not have the attribute 'get_installer'
+FAILED tests/test_executor.py::TestDeploymentExecutor::test_run_checkers - AttributeError: <module 'deployer.executor' from '/Users/sivan/code_project/my_project/python_project/auto_deploy/deployer/executor.py'> does not have the attribute 'CheckerManager'
+=================================================================================================================== 2 failed, 22 passed in 0.31s ===================================================================================================================

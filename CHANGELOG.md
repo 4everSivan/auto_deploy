@@ -9,6 +9,21 @@
 
 ### 新增
 
+#### Stage 5: 执行引擎
+- **TaskManager**:
+  - `Task` 数据类：任务定义，包含状态、进度、时间等信息。
+  - `TaskStatus` 枚举：PENDING, RUNNING, COMPLETED, FAILED, SKIPPED。
+  - `TaskManager` 类：任务创建、状态跟踪、统计信息。
+  - 支持任务进度更新和持续时间计算。
+- **DeploymentExecutor**:
+  - 多线程并发执行：使用 `ThreadPoolExecutor` 并发执行节点部署。
+  - 任务调度：节点间并发，节点内软件串行安装。
+  - 控制功能：pause/resume/stop 部署执行。
+  - 回调机制：支持 on_task_start, on_task_complete, on_task_fail 等事件回调。
+  - 集成 Checker 和 Installer：自动运行检查器并调用安装器。
+  - 错误隔离：单节点失败不影响其他节点。
+  - 节点内错误处理：某软件失败则停止该节点后续安装。
+
 #### Stage 3 重构: Ansible Playbook 集成
 - **Ansible Playbooks**:
   - `playbook/install_java.yml`: Java 安装 playbook，支持 repository、URL、local 三种源。
