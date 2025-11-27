@@ -1,0 +1,114 @@
+---
+# Java Installation Playbook
+# Supports installation from repository, URL download, and local file
+
+- name: Install Java JDK
+  hosts: all
+  become: yes
+  vars:
+    java_version: "11"
+    java_install_path: "/usr/lib/jvm/java-{{ java_version }}"
+    java_source: "repository"  # repository, url, local
+    java_source_path: ""
+    java_set_home: true
+    java_add_to_path: true
+    
+  tasks:
+    - name: Install Java from repository (Debian/Ubuntu)
+      when: java_source == "repository" and ansible_os_family == "Debian"
+      block:
+        - name: Update apt cache
+          apt:
+            update_cache: yes
+            cache_valid_time: 3600
+          
+        - name: Install OpenJDK from repository
+          apt:
+            name: "openjdk-{{ java_version }}-jdk"
+            state: present
+          register: java_install_result
+          
+    - name: Install Java from URL
+      when: java_source == "url"
+      block:
+        - name: Create installation directory
+          file:
+            path: "{{ java_install_path }}"
+            state: directory
+            mode: '0755'
+            
+        - name: Download Java archive
+          get_url:
+            url: "{{ java_source_path }}"
+            dest: "/tmp/jdk-{{ java_version }}.tar.gz"
+            mode: '0644'
+          register: download_result
+          
+        - name: Extract Java archive
+          unarchive:
+            src: "/tmp/jdk-{{ java_version }}.tar.gz"
+            dest: "{{ java_install_path }}"
+            remote_src: yes
+            extra_opts: [--strip-components=1]
+          when: download_result is succeeded
+          
+        - name: Clean up downloaded archive
+          file:
+            path: "/tmp/jdk-{{ java_version }}.tar.gz"
+            state: absent
+            
+    - name: Install Java from local file
+      when: java_source == "local"
+      block:
+        - name: Create installation directory
+          file:
+            path: "{{ java_install_path }}"
+            state: directory
+            mode: '0755'
+            
+        - name: Copy local Java archive
+          copy:
+            src: "{{ java_source_path }}"
+            dest: "/tmp/jdk-local.tar.gz"
+            mode: '0644'
+          register: copy_result
+          
+        - name: Extract Java archive
+          unarchive:
+            src: "/tmp/jdk-local.tar.gz"
+            dest: "{{ java_install_path }}"
+            remote_src: yes
+            extra_opts: [--strip-components=1]
+          when: copy_result is succeeded
+          
+        - name: Clean up copied archive
+          file:
+            path: "/tmp/jdk-local.tar.gz"
+            state: absent
+            
+    - name: Configure JAVA_HOME
+      when: java_set_home
+      lineinfile:
+        path: /etc/environment
+        regexp: '^JAVA_HOME='
+        line: "JAVA_HOME={{ java_install_path }}"
+        create: yes
+        
+    - name: Add Java to PATH
+      when: java_add_to_path
+      copy:
+        dest: /etc/profile.d/java.sh
+        content: |
+          export JAVA_HOME={{ java_install_path }}
+          export PATH=$JAVA_HOME/bin:$PATH
+        mode: '0644'
+        
+    - name: Verify Java installation
+      command: "{{ java_install_path }}/bin/java -version"
+      register: java_version_output
+      changed_when: false
+      failed_when: java_version_output.rc != 0
+      
+    - name: Display Java version
+      debug:
+        msg: "{{ java_version_output.stderr_lines }}"

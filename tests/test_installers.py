@@ -3,7 +3,8 @@ Tests for deployer.installers module.
 """
 
 import pytest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock, MagicMock, patch
+import os
 
 from deployer.installers import get_installer, INSTALLER_REGISTRY
 from deployer.installers.base import BaseInstaller
@@ -150,6 +151,20 @@ class TestJavaInstaller:
         assert 'java_installed' in result
         assert 'disk_space_ok' in result
         assert 'install_path_exists' in result
+    
+    def test_install_calls_playbook(self, java_installer):
+        """Test that install method calls run_playbook."""
+        # Mock run_playbook
+        java_installer.ansible.run_playbook = Mock(return_value={'rc': 0})
+        java_installer.get_playbook_path = Mock(return_value='/path/to/install_java.yml')
+        
+        result = java_installer.install()
+        
+        # Verify playbook was called
+        assert java_installer.ansible.run_playbook.called
+        assert result['status'] == 'success'
+        assert result['method'] == 'playbook'
+        assert result['playbook'] == 'install_java.yml'
 
 
 class TestPythonInstaller:
@@ -183,6 +198,19 @@ class TestPythonInstaller:
         """Test PythonInstaller initialization."""
         assert python_installer.software_config.name == 'python'
         assert python_installer.software_config.version == '3.9.0'
+    
+    def test_install_calls_playbook(self, python_installer):
+        """Test that install method calls run_playbook."""
+        # Mock run_playbook
+        python_installer.ansible.run_playbook = Mock(return_value={'rc': 0})
+        python_installer.get_playbook_path = Mock(return_value='/path/to/install_python.yml')
+        
+        result = python_installer.install()
+        
+        # Verify playbook was called
+        assert python_installer.ansible.run_playbook.called
+        assert result['status'] == 'success'
+        assert result['method'] == 'playbook'
 
 
 class TestZookeeperInstaller:
@@ -218,3 +246,16 @@ class TestZookeeperInstaller:
         assert zk_installer.software_config.name == 'zookeeper'
         assert zk_installer.software_config.version == '3.7.1'
         assert zk_installer.software_config.config['client_port'] == 2181
+    
+    def test_install_calls_playbook(self, zk_installer):
+        """Test that install method calls run_playbook."""
+        # Mock run_playbook
+        zk_installer.ansible.run_playbook = Mock(return_value={'rc': 0})
+        zk_installer.get_playbook_path = Mock(return_value='/path/to/install_zookeeper.yml')
+        
+        result = zk_installer.install()
+        
+        # Verify playbook was called
+        assert zk_installer.ansible.run_playbook.called
+        assert result['status'] == 'success'
+        assert result['method'] == 'playbook'

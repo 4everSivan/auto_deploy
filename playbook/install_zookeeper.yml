@@ -1,0 +1,112 @@
+---
+# Zookeeper Installation Playbook
+# Supports installation from repository and URL download
+
+- name: Install Apache Zookeeper
+  hosts: all
+  become: yes
+  vars:
+    zk_version: "3.7.1"
+    zk_install_path: "/opt/zookeeper"
+    zk_source: "repository"  # repository, url
+    zk_source_path: ""
+    zk_data_dir: "/var/lib/zookeeper"
+    zk_client_port: 2181
+    zk_tick_time: 2000
+    zk_init_limit: 10
+    zk_sync_limit: 5
+    
+  tasks:
+    - name: Install Zookeeper from repository (Debian/Ubuntu)
+      when: zk_source == "repository" and ansible_os_family == "Debian"
+      block:
+        - name: Update apt cache
+          apt:
+            update_cache: yes
+            cache_valid_time: 3600
+            
+        - name: Install Zookeeper packages
+          apt:
+            name:
+              - zookeeper
+              - zookeeperd
+            state: present
+          register: zk_install_result
+          
+    - name: Install Zookeeper from URL
+      when: zk_source == "url"
+      block:
+        - name: Create installation directory
+          file:
+            path: "{{ zk_install_path }}"
+            state: directory
+            mode: '0755'
+            
+        - name: Set default source URL if not provided
+          set_fact:
+            zk_download_url: "{{ zk_source_path | default('https://archive.apache.org/dist/zookeeper/zookeeper-' + zk_version + '/apache-zookeeper-' + zk_version + '-bin.tar.gz') }}"
+            
+        - name: Download Zookeeper archive
+          get_url:
+            url: "{{ zk_download_url }}"
+            dest: "/tmp/zookeeper-{{ zk_version }}.tar.gz"
+            mode: '0644'
+          register: download_result
+          
+        - name: Extract Zookeeper archive
+          unarchive:
+            src: "/tmp/zookeeper-{{ zk_version }}.tar.gz"
+            dest: "{{ zk_install_path }}"
+            remote_src: yes
+            extra_opts: [--strip-components=1]
+          when: download_result is succeeded
+          
+        - name: Clean up downloaded archive
+          file:
+            path: "/tmp/zookeeper-{{ zk_version }}.tar.gz"
+            state: absent
+            
+    - name: Create Zookeeper data directory
+      file:
+        path: "{{ zk_data_dir }}"
+        state: directory
+        mode: '0755'
+        
+    - name: Create Zookeeper configuration directory
+      file:
+        path: "{{ zk_install_path }}/conf"
+        state: directory
+        mode: '0755'
+      when: zk_source == "url"
+      
+    - name: Generate zoo.cfg configuration
+      copy:
+        dest: "{{ zk_install_path }}/conf/zoo.cfg"
+        content: |
+          # Zookeeper configuration
+          tickTime={{ zk_tick_time }}
+          initLimit={{ zk_init_limit }}
+          syncLimit={{ zk_sync_limit }}
+          dataDir={{ zk_data_dir }}
+          clientPort={{ zk_client_port }}
+        mode: '0644'
+      when: zk_source == "url"
+      
+    - name: Verify Zookeeper installation (repository)
+      command: zkServer.sh version
+      register: zk_version_output
+      changed_when: false
+      failed_when: false
+      when: zk_source == "repository"
+      
+    - name: Verify Zookeeper installation (URL)
+      command: "{{ zk_install_path }}/bin/zkServer.sh version"
+      register: zk_version_output
+      changed_when: false
+      failed_when: false
+      when: zk_source == "url"
+      
+    - name: Display Zookeeper version
+      debug:
+        msg: "{{ zk_version_output.stdout_lines }}"
+      when: zk_version_output is succeeded

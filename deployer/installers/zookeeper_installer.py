@@ -10,7 +10,7 @@ from common.exceptions import InstallException
 
 
 class ZookeeperInstaller(BaseInstaller):
-    """Installer for Apache Zookeeper."""
+    """Installer for Apache Zookeeper using Ansible playbook."""
     
     def pre_check(self) -> Dict[str, Any]:
         """
@@ -69,139 +69,67 @@ class ZookeeperInstaller(BaseInstaller):
     
     def install(self) -> Dict[str, Any]:
         """
-        Install Zookeeper.
+        Install Zookeeper using Ansible playbook.
         
         Returns:
             Installation results
         """
         self.logger.info(
-            f'Installing Zookeeper {self.software_config.version}',
+            f'Installing Zookeeper {self.software_config.version} using Ansible playbook',
             node=self.node_config.name
         )
         
-        # Create installation directory
-        try:
-            self.run_command(
-                f'mkdir -p {self.software_config.install_path}',
-                become=True
-            )
-        except Exception as e:
-            raise InstallException(f'Failed to create install directory: {e}')
+        # Prepare playbook variables
+        extra_vars = {
+            'zk_version': self.software_config.version,
+            'zk_install_path': self.software_config.install_path,
+            'zk_source': self.software_config.source,
+            'zk_source_path': self.software_config.source_path or '',
+            'zk_data_dir': self.software_config.config.get('data_dir', '/var/lib/zookeeper'),
+            'zk_client_port': self.software_config.config.get('client_port', 2181),
+            'zk_tick_time': self.software_config.config.get('tick_time', 2000),
+            'zk_init_limit': self.software_config.config.get('init_limit', 10),
+            'zk_sync_limit': self.software_config.config.get('sync_limit', 5)
+        }
         
-        # Install based on source type
-        if self.software_config.source == 'repository':
-            return self._install_from_repository()
-        elif self.software_config.source == 'url':
-            return self._install_from_url()
-        else:
-            raise InstallException(f'Unsupported source: {self.software_config.source}')
-    
-    def _install_from_repository(self) -> Dict[str, Any]:
-        """Install Zookeeper from system repository."""
-        try:
-            # Update package list
-            self.logger.info('Updating package list', node=self.node_config.name)
-            self.run_command('apt-get update -qq', become=True)
-            
-            # Install Zookeeper
-            self.logger.info('Installing Zookeeper', node=self.node_config.name)
-            result = self.run_command(
-                'DEBIAN_FRONTEND=noninteractive apt-get install -y zookeeper zookeeperd',
-                become=True
-            )
-            
-            return {
-                'status': 'success',
-                'method': 'repository'
-            }
-        except Exception as e:
-            raise InstallException(f'Failed to install Zookeeper from repository: {e}')
-    
-    def _install_from_url(self) -> Dict[str, Any]:
-        """Install Zookeeper from URL."""
-        if not self.software_config.source_path:
-            # Use default Apache mirror
-            version = self.software_config.version
-            self.software_config.source_path = (
-                f'https://archive.apache.org/dist/zookeeper/'
-                f'zookeeper-{version}/apache-zookeeper-{version}-bin.tar.gz'
-            )
+        # Get playbook path
+        playbook_path = self.get_playbook_path('install_zookeeper.yml')
         
         try:
-            # Download Zookeeper archive
-            self.logger.info(
-                f'Downloading Zookeeper from {self.software_config.source_path}',
-                node=self.node_config.name
+            # Run playbook
+            result = self.ansible.run_playbook(
+                playbook=playbook_path,
+                inventory=self.build_inventory(),
+                extra_vars=extra_vars,
+                node_name=self.node_config.name
             )
             
-            tmp_file = f'/tmp/zookeeper-{self.software_config.version}.tar.gz'
-            self.run_command(
-                f'wget -q -O {tmp_file} {self.software_config.source_path}',
-                become=True
-            )
-            
-            # Extract archive
-            self.logger.info('Extracting Zookeeper archive', node=self.node_config.name)
-            self.run_command(
-                f'tar -xzf {tmp_file} -C {self.software_config.install_path} --strip-components=1',
-                become=True
-            )
-            
-            # Clean up
-            self.run_command(f'rm -f {tmp_file}', become=True)
-            
-            return {
-                'status': 'success',
-                'method': 'url',
-                'source': self.software_config.source_path
-            }
+            if result['rc'] == 0:
+                return {
+                    'status': 'success',
+                    'method': 'playbook',
+                    'source': self.software_config.source,
+                    'playbook': 'install_zookeeper.yml'
+                }
+            else:
+                raise InstallException(
+                    f'Playbook execution failed: {result.get("stderr", "Unknown error")}'
+                )
+                
         except Exception as e:
-            raise InstallException(f'Failed to install Zookeeper from URL: {e}')
+            raise InstallException(f'Failed to install Zookeeper: {e}')
     
     def post_config(self) -> Dict[str, Any]:
         """
-        Configure Zookeeper.
+        Post-configuration is handled by the playbook.
         
         Returns:
             Configuration results
         """
-        self.logger.info('Configuring Zookeeper', node=self.node_config.name)
-        
-        config = self.software_config.config
-        
-        # Create data directory
-        data_dir = config.get('data_dir', '/var/lib/zookeeper')
-        try:
-            self.run_command(f'mkdir -p {data_dir}', become=True)
-            self.logger.info(f'Created data directory: {data_dir}', node=self.node_config.name)
-        except Exception as e:
-            self.logger.warning(f'Failed to create data directory: {e}', node=self.node_config.name)
-        
-        # Create zoo.cfg configuration file
-        client_port = config.get('client_port', 2181)
-        tick_time = config.get('tick_time', 2000)
-        init_limit = config.get('init_limit', 10)
-        sync_limit = config.get('sync_limit', 5)
-        
-        zoo_cfg = f"""# Zookeeper configuration
-tickTime={tick_time}
-initLimit={init_limit}
-syncLimit={sync_limit}
-dataDir={data_dir}
-clientPort={client_port}
-"""
-        
-        try:
-            # Write configuration
-            conf_dir = f'{self.software_config.install_path}/conf'
-            self.run_command(f'mkdir -p {conf_dir}', become=True)
-            self.run_command(
-                f'cat > {conf_dir}/zoo.cfg << EOF\n{zoo_cfg}\nEOF',
-                become=True
-            )
-            self.logger.info('Created zoo.cfg configuration', node=self.node_config.name)
-        except Exception as e:
-            self.logger.warning(f'Failed to create zoo.cfg: {e}', node=self.node_config.name)
+        self.logger.info(
+            'Post-configuration handled by playbook',
+            node=self.node_config.name
+        )
         
         return {'status': 'success', 'configured': True}
     

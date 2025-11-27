@@ -9,6 +9,21 @@
 
 ### 新增
 
+#### Stage 3 重构: Ansible Playbook 集成
+- **Ansible Playbooks**:
+  - `playbook/install_java.yml`: Java 安装 playbook，支持 repository、URL、local 三种源。
+  - `playbook/install_python.yml`: Python 安装 playbook，支持 repository 和源码编译。
+  - `playbook/install_zookeeper.yml`: Zookeeper 安装 playbook，支持 repository 和 URL 源，自动生成 zoo.cfg。
+- **重构安装器**:
+  - `JavaInstaller`: 使用 `run_playbook()` 调用 Ansible playbook 而非直接执行 shell 命令。
+  - `PythonInstaller`: 使用 playbook 实现幂等性安装。
+  - `ZookeeperInstaller`: 使用 playbook 并自动配置。
+- **优势**:
+  - 幂等性：多次执行结果一致。
+  - 可维护性：playbook 易于理解和修改。
+  - 可复用性：playbook 可独立使用。
+  - 符合 Ansible 最佳实践。
+
 #### Stage 4: 检查器实现
 - **检查器框架**:
   - 创建了抽象 `BaseChecker` 类，定义检查接口。

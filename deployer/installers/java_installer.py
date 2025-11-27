@@ -10,7 +10,7 @@ from common.exceptions import InstallException
 
 
 class JavaInstaller(BaseInstaller):
-    """Installer for Java JDK."""
+    """Installer for Java JDK using Ansible playbook."""
     
     def pre_check(self) -> Dict[str, Any]:
         """
@@ -79,140 +79,64 @@ class JavaInstaller(BaseInstaller):
     
     def install(self) -> Dict[str, Any]:
         """
-        Install Java JDK.
+        Install Java JDK using Ansible playbook.
         
         Returns:
             Installation results
         """
         self.logger.info(
-            f'Installing Java {self.software_config.version}',
+            f'Installing Java {self.software_config.version} using Ansible playbook',
             node=self.node_config.name
         )
         
-        # Create installation directory
-        try:
-            self.run_command(
-                f'mkdir -p {self.software_config.install_path}',
-                become=True
-            )
-        except Exception as e:
-            raise InstallException(f'Failed to create install directory: {e}')
-        
-        # Install based on source type
-        if self.software_config.source == 'repository':
-            return self._install_from_repository()
-        elif self.software_config.source == 'url':
-            return self._install_from_url()
-        elif self.software_config.source == 'local':
-            return self._install_from_local()
-        else:
-            raise InstallException(f'Unsupported source: {self.software_config.source}')
-    
-    def _install_from_repository(self) -> Dict[str, Any]:
-        """Install Java from system repository."""
-        version_map = {
-            '8': 'openjdk-8-jdk',
-            '11': 'openjdk-11-jdk',
-            '17': 'openjdk-17-jdk'
+        # Prepare playbook variables
+        extra_vars = {
+            'java_version': self.software_config.version,
+            'java_install_path': self.software_config.install_path,
+            'java_source': self.software_config.source,
+            'java_source_path': self.software_config.source_path or '',
+            'java_set_home': self.software_config.config.get('set_java_home', True),
+            'java_add_to_path': self.software_config.config.get('add_to_path', True)
         }
         
-        package = version_map.get(self.software_config.version, 'default-jdk')
+        # Get playbook path
+        playbook_path = self.get_playbook_path('install_java.yml')
         
         try:
-            # Update package list
-            self.logger.info('Updating package list', node=self.node_config.name)
-            self.run_command('apt-get update -qq', become=True)
-            
-            # Install Java
-            self.logger.info(f'Installing {package}', node=self.node_config.name)
-            result = self.run_command(
-                f'DEBIAN_FRONTEND=noninteractive apt-get install -y {package}',
-                become=True
+            # Run playbook
+            result = self.ansible.run_playbook(
+                playbook=playbook_path,
+                inventory=self.build_inventory(),
+                extra_vars=extra_vars,
+                node_name=self.node_config.name
             )
             
-            return {
-                'status': 'success',
-                'method': 'repository',
-                'package': package
-            }
+            if result['rc'] == 0:
+                return {
+                    'status': 'success',
+                    'method': 'playbook',
+                    'source': self.software_config.source,
+                    'playbook': 'install_java.yml'
+                }
+            else:
+                raise InstallException(
+                    f'Playbook execution failed: {result.get("stderr", "Unknown error")}'
+                )
+                
         except Exception as e:
-            raise InstallException(f'Failed to install Java from repository: {e}')
-    
-    def _install_from_url(self) -> Dict[str, Any]:
-        """Install Java from URL."""
-        if not self.software_config.source_path:
-            raise InstallException('source_path is required for URL installation')
-        
-        try:
-            # Download Java archive
-            self.logger.info(
-                f'Downloading Java from {self.software_config.source_path}',
-                node=self.node_config.name
-            )
-            
-            tmp_file = f'/tmp/jdk-{self.software_config.version}.tar.gz'
-            self.run_command(
-                f'wget -q -O {tmp_file} {self.software_config.source_path}',
-                become=True
-            )
-            
-            # Extract archive
-            self.logger.info('Extracting Java archive', node=self.node_config.name)
-            self.run_command(
-                f'tar -xzf {tmp_file} -C {self.software_config.install_path} --strip-components=1',
-                become=True
-            )
-            
-            # Clean up
-            self.run_command(f'rm -f {tmp_file}', become=True)
-            
-            return {
-                'status': 'success',
-                'method': 'url',
-                'source': self.software_config.source_path
-            }
-        except Exception as e:
-            raise InstallException(f'Failed to install Java from URL: {e}')
-    
-    def _install_from_local(self) -> Dict[str, Any]:
-        """Install Java from local file."""
-        raise InstallException('Local installation not yet implemented')
+            raise InstallException(f'Failed to install Java: {e}')
     
     def post_config(self) -> Dict[str, Any]:
         """
-        Configure Java environment variables.
+        Post-configuration is handled by the playbook.
         
         Returns:
             Configuration results
         """
-        self.logger.info('Configuring Java environment', node=self.node_config.name)
-        
-        config = self.software_config.config
-        
-        if config.get('set_java_home', False):
-            # Set JAVA_HOME
-            java_home = self.software_config.install_path
-            
-            # Add to /etc/environment
-            try:
-                self.run_command(
-                    f'echo "JAVA_HOME={java_home}" >> /etc/environment',
-                    become=True
-                )
-                self.logger.info(f'Set JAVA_HOME={java_home}', node=self.node_config.name)
-            except Exception as e:
-                self.logger.warning(f'Failed to set JAVA_HOME: {e}', node=self.node_config.name)
-        
-        if config.get('add_to_path', False):
-            # Add Java bin to PATH
-            try:
-                self.run_command(
-                    f'echo "export PATH={self.software_config.install_path}/bin:$PATH" >> /etc/profile.d/java.sh',
-                    become=True
-                )
-                self.logger.info('Added Java to PATH', node=self.node_config.name)
-            except Exception as e:
-                self.logger.warning(f'Failed to add Java to PATH: {e}', node=self.node_config.name)
+        self.logger.info(
+            'Post-configuration handled by playbook',
+            node=self.node_config.name
+        )
         
         return {'status': 'success', 'configured': True}
     

@@ -10,7 +10,7 @@ from common.exceptions import InstallException
 
 
 class PythonInstaller(BaseInstaller):
-    """Installer for Python."""
+    """Installer for Python using Ansible playbook."""
     
     def pre_check(self) -> Dict[str, Any]:
         """
@@ -62,143 +62,64 @@ class PythonInstaller(BaseInstaller):
     
     def install(self) -> Dict[str, Any]:
         """
-        Install Python.
+        Install Python using Ansible playbook.
         
         Returns:
             Installation results
         """
         self.logger.info(
-            f'Installing Python {self.software_config.version}',
+            f'Installing Python {self.software_config.version} using Ansible playbook',
             node=self.node_config.name
         )
         
-        # Create installation directory
-        try:
-            self.run_command(
-                f'mkdir -p {self.software_config.install_path}',
-                become=True
-            )
-        except Exception as e:
-            raise InstallException(f'Failed to create install directory: {e}')
+        # Prepare playbook variables
+        extra_vars = {
+            'python_version': self.software_config.version,
+            'python_install_path': self.software_config.install_path,
+            'python_source': self.software_config.source,
+            'python_source_path': self.software_config.source_path or '',
+            'python_install_pip': True,
+            'python_install_venv': True
+        }
         
-        # Install based on source type
-        if self.software_config.source == 'repository':
-            return self._install_from_repository()
-        elif self.software_config.source == 'url':
-            return self._install_from_url()
-        else:
-            raise InstallException(f'Unsupported source: {self.software_config.source}')
-    
-    def _install_from_repository(self) -> Dict[str, Any]:
-        """Install Python from system repository."""
-        try:
-            # Update package list
-            self.logger.info('Updating package list', node=self.node_config.name)
-            self.run_command('apt-get update -qq', become=True)
-            
-            # Install Python and essential packages
-            self.logger.info('Installing Python', node=self.node_config.name)
-            packages = [
-                'python3',
-                'python3-pip',
-                'python3-dev',
-                'python3-venv'
-            ]
-            
-            result = self.run_command(
-                f'DEBIAN_FRONTEND=noninteractive apt-get install -y {" ".join(packages)}',
-                become=True
-            )
-            
-            return {
-                'status': 'success',
-                'method': 'repository',
-                'packages': packages
-            }
-        except Exception as e:
-            raise InstallException(f'Failed to install Python from repository: {e}')
-    
-    def _install_from_url(self) -> Dict[str, Any]:
-        """Install Python from source."""
-        if not self.software_config.source_path:
-            raise InstallException('source_path is required for URL installation')
+        # Get playbook path
+        playbook_path = self.get_playbook_path('install_python.yml')
         
         try:
-            # Install build dependencies
-            self.logger.info('Installing build dependencies', node=self.node_config.name)
-            build_deps = [
-                'build-essential',
-                'libssl-dev',
-                'zlib1g-dev',
-                'libncurses5-dev',
-                'libncursesw5-dev',
-                'libreadline-dev',
-                'libsqlite3-dev',
-                'libgdbm-dev',
-                'libdb5.3-dev',
-                'libbz2-dev',
-                'libexpat1-dev',
-                'liblzma-dev',
-                'tk-dev',
-                'libffi-dev'
-            ]
-            
-            self.run_command('apt-get update -qq', become=True)
-            self.run_command(
-                f'DEBIAN_FRONTEND=noninteractive apt-get install -y {" ".join(build_deps)}',
-                become=True
+            # Run playbook
+            result = self.ansible.run_playbook(
+                playbook=playbook_path,
+                inventory=self.build_inventory(),
+                extra_vars=extra_vars,
+                node_name=self.node_config.name
             )
             
-            # Download Python source
-            self.logger.info(
-                f'Downloading Python from {self.software_config.source_path}',
-                node=self.node_config.name
-            )
-            
-            tmp_file = f'/tmp/Python-{self.software_config.version}.tgz'
-            self.run_command(
-                f'wget -q -O {tmp_file} {self.software_config.source_path}',
-                become=True
-            )
-            
-            # Extract and build
-            self.logger.info('Building Python from source', node=self.node_config.name)
-            build_dir = f'/tmp/Python-{self.software_config.version}'
-            
-            self.run_command(f'tar -xzf {tmp_file} -C /tmp', become=True)
-            self.run_command(
-                f'cd {build_dir} && ./configure --prefix={self.software_config.install_path} --enable-optimizations',
-                become=True
-            )
-            self.run_command(f'cd {build_dir} && make -j$(nproc)', become=True)
-            self.run_command(f'cd {build_dir} && make altinstall', become=True)
-            
-            # Clean up
-            self.run_command(f'rm -rf {tmp_file} {build_dir}', become=True)
-            
-            return {
-                'status': 'success',
-                'method': 'source',
-                'version': self.software_config.version
-            }
+            if result['rc'] == 0:
+                return {
+                    'status': 'success',
+                    'method': 'playbook',
+                    'source': self.software_config.source,
+                    'playbook': 'install_python.yml'
+                }
+            else:
+                raise InstallException(
+                    f'Playbook execution failed: {result.get("stderr", "Unknown error")}'
+                )
+                
         except Exception as e:
-            raise InstallException(f'Failed to install Python from source: {e}')
+            raise InstallException(f'Failed to install Python: {e}')
     
     def post_config(self) -> Dict[str, Any]:
         """
-        Configure Python environment.
+        Post-configuration is handled by the playbook.
         
         Returns:
             Configuration results
         """
-        self.logger.info('Configuring Python environment', node=self.node_config.name)
-        
-        # Upgrade pip
-        try:
-            self.run_command('python3 -m pip install --upgrade pip', become=True)
-            self.logger.info('Upgraded pip', node=self.node_config.name)
-        except Exception as e:
-            self.logger.warning(f'Failed to upgrade pip: {e}', node=self.node_config.name)
+        self.logger.info(
+            'Post-configuration handled by playbook',
+            node=self.node_config.name
+        )
         
         return {'status': 'success', 'configured': True}
     

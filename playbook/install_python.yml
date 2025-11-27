@@ -1,0 +1,134 @@
+---
+# Python Installation Playbook
+# Supports installation from repository and source compilation
+
+- name: Install Python
+  hosts: all
+  become: yes
+  vars:
+    python_version: "3.9"
+    python_install_path: "/usr/local"
+    python_source: "repository"  # repository, url (source)
+    python_source_path: ""
+    python_install_pip: true
+    python_install_venv: true
+    
+  tasks:
+    - name: Install Python from repository (Debian/Ubuntu)
+      when: python_source == "repository" and ansible_os_family == "Debian"
+      block:
+        - name: Update apt cache
+          apt:
+            update_cache: yes
+            cache_valid_time: 3600
+            
+        - name: Install Python and essential packages
+          apt:
+            name:
+              - python3
+              - python3-pip
+              - python3-dev
+              - python3-venv
+            state: present
+          register: python_install_result
+          
+    - name: Install Python from source
+      when: python_source == "url"
+      block:
+        - name: Install build dependencies
+          apt:
+            name:
+              - build-essential
+              - libssl-dev
+              - zlib1g-dev
+              - libncurses5-dev
+              - libncursesw5-dev
+              - libreadline-dev
+              - libsqlite3-dev
+              - libgdbm-dev
+              - libdb5.3-dev
+              - libbz2-dev
+              - libexpat1-dev
+              - liblzma-dev
+              - tk-dev
+              - libffi-dev
+              - wget
+            state: present
+          when: ansible_os_family == "Debian"
+          
+        - name: Download Python source
+          get_url:
+            url: "{{ python_source_path }}"
+            dest: "/tmp/Python-{{ python_version }}.tgz"
+            mode: '0644'
+          register: download_result
+          
+        - name: Extract Python source
+          unarchive:
+            src: "/tmp/Python-{{ python_version }}.tgz"
+            dest: /tmp
+            remote_src: yes
+          when: download_result is succeeded
+          
+        - name: Configure Python build
+          command: >
+            ./configure
+            --prefix={{ python_install_path }}
+            --enable-optimizations
+            --with-ensurepip=install
+          args:
+            chdir: "/tmp/Python-{{ python_version }}"
+          register: configure_result
+          
+        - name: Build Python
+          command: make -j{{ ansible_processor_vcpus }}
+          args:
+            chdir: "/tmp/Python-{{ python_version }}"
+          when: configure_result is succeeded
+          register: build_result
+          
+        - name: Install Python
+          command: make altinstall
+          args:
+            chdir: "/tmp/Python-{{ python_version }}"
+          when: build_result is succeeded
+          register: install_result
+          
+        - name: Clean up source files
+          file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "/tmp/Python-{{ python_version }}.tgz"
+            - "/tmp/Python-{{ python_version }}"
+          when: install_result is succeeded
+          
+    - name: Upgrade pip
+      when: python_install_pip
+      pip:
+        name: pip
+        state: latest
+        executable: pip3
+      ignore_errors: yes
+      
+    - name: Verify Python installation
+      command: python3 --version
+      register: python_version_output
+      changed_when: false
+      failed_when: python_version_output.rc != 0
+      
+    - name: Verify pip installation
+      command: python3 -m pip --version
+      register: pip_version_output
+      changed_when: false
+      failed_when: pip_version_output.rc != 0
+      when: python_install_pip
+      
+    - name: Display Python version
+      debug:
+        msg: "{{ python_version_output.stdout }}"
+        
+    - name: Display pip version
+      debug:
+        msg: "{{ pip_version_output.stdout }}"
+      when: python_install_pip and pip_version_output is succeeded
