@@ -20,7 +20,8 @@ class BaseInstaller(ABC):
         node_config: NodeConfig,
         software_config: SoftwareConfig,
         ansible_wrapper: AnsibleWrapper,
-        logger: DeployLogger
+        logger: DeployLogger,
+        dry_run: bool = False
     ):
         """
         Initialize installer.
@@ -30,11 +31,13 @@ class BaseInstaller(ABC):
             software_config: Software configuration
             ansible_wrapper: Ansible wrapper instance
             logger: Logger instance
+            dry_run: Whether to perform a dry run
         """
         self.node_config = node_config
         self.software_config = software_config
         self.ansible = ansible_wrapper
         self.logger = logger
+        self.dry_run = dry_run
     
     @abstractmethod
     def pre_check(self) -> Dict[str, Any]:
@@ -176,5 +179,6 @@ class BaseInstaller(ABC):
             become=become,
             become_user=self.node_config.super_user,
             become_password=self.node_config.super_pass,
-            node_name=self.node_config.name
+            node_name=self.node_config.name,
+            check=self.dry_run
         )

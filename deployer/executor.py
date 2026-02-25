@@ -23,7 +23,8 @@ class DeploymentExecutor:
         self,
         config: Config,
         task_manager: TaskManager,
-        logger: DeployLogger
+        logger: DeployLogger,
+        dry_run: bool = False
     ):
         """
         Initialize deployment executor.
@@ -32,10 +33,12 @@ class DeploymentExecutor:
             config: Configuration object
             task_manager: Task manager instance
             logger: Logger instance
+            dry_run: Whether to perform a dry run
         """
         self.config = config
         self.task_manager = task_manager
         self.logger = logger
+        self.dry_run = dry_run
         
         # Thread pool for concurrent node execution
         self.max_workers = config.get_max_concurrent_nodes()
@@ -275,7 +278,7 @@ class DeploymentExecutor:
         from deployer.installers import get_installer
         
         installer_class = get_installer(software_name)
-        return installer_class(node, software, self.ansible, self.logger)
+        return installer_class(node, software, self.ansible, self.logger, dry_run=self.dry_run)
     
     def _get_software_config(
         self,

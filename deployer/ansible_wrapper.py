@@ -27,19 +27,21 @@ class AnsibleWrapper:
     
     def run_playbook(
         self,
-        playbook_path: str,
+        playbook: str,
         inventory: Dict[str, Any],
         extra_vars: Optional[Dict[str, Any]] = None,
-        node_name: Optional[str] = None
+        node_name: Optional[str] = None,
+        check: bool = False
     ) -> Dict[str, Any]:
         """
         Run an Ansible playbook.
         
         Args:
-            playbook_path: Path to playbook file
+            playbook: Path to playbook file
             inventory: Ansible inventory dictionary
             extra_vars: Extra variables to pass to playbook
             node_name: Node name for logging
+            check: Whether to run in check mode (dry run)
             
         Returns:
             Dictionary with execution results
@@ -47,8 +49,8 @@ class AnsibleWrapper:
         Raises:
             AnsibleException: If playbook execution fails
         """
-        if not os.path.exists(playbook_path):
-            raise AnsibleException(f'Playbook not found: {playbook_path}')
+        if not os.path.exists(playbook):
+            raise AnsibleException(f'Playbook not found: {playbook}')
         
         # Create temporary directory for ansible-runner
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -58,7 +60,7 @@ class AnsibleWrapper:
             
             # Log execution start
             self.logger.info(
-                f'Running playbook: {os.path.basename(playbook_path)}',
+                f'Running playbook: {os.path.basename(playbook)}',
                 node=node_name
             )
             
@@ -66,11 +68,12 @@ class AnsibleWrapper:
                 # Run playbook
                 result = ansible_runner.run(
                     private_data_dir=tmpdir,
-                    playbook=playbook_path,
+                    playbook=playbook,
                     inventory=inventory_path,
                     extravars=extra_vars or {},
                     quiet=False,
-                    verbosity=1
+                    verbosity=1,
+                    check=check
                 )
                 
                 # Check result
@@ -119,7 +122,8 @@ class AnsibleWrapper:
         become: bool = False,
         become_user: str = 'root',
         become_password: Optional[str] = None,
-        node_name: Optional[str] = None
+        node_name: Optional[str] = None,
+        check: bool = False
     ) -> Dict[str, Any]:
         """
         Run an ad-hoc command on a remote host.
@@ -135,6 +139,7 @@ class AnsibleWrapper:
             become_user: User to become
             become_password: Password for privilege escalation
             node_name: Node name for logging
+            check: Whether to run in check mode (dry run)
             
         Returns:
             Dictionary with command results
@@ -186,7 +191,8 @@ class AnsibleWrapper:
                     module='shell',
                     module_args=command,
                     inventory=inventory_path,
-                    quiet=True
+                    quiet=True,
+                    check=check
                 )
                 
                 if result.status == 'successful':

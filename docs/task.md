@@ -63,8 +63,15 @@
   - [x] T5.6: Implemented error handling and isolation
   - [x] T5.7: Created TaskManager for task tracking
   - [x] T5.8: Executor and TaskManager tests
-- [ ] Stage 6: CLI Interface (Week 2, End)
-  - [ ] T6.1-T6.5: CLI enhancements
+- [x] Stage 6: CLI Interface (Week 2, End)
+  - [x] T6.1: Extend ctl.py with deploy command
+  - [x] T6.2: Implement CLI deployment workflow
+  - [x] T6.3: Implement --dry-run mode
+  - [x] T6.4: Use Rich for output beautification
+  - [x] T6.5: Implement progress display and statistics
+- [x] GitHub CI/CD Integration
+  - [x] Create .github/workflows/ci.yml
+  - [x] Add linting and coverage checks
 - [ ] Stage 7: TUI Interface (Week 3, First Half)
   - [ ] T7.1-T7.10: TUI components
 - [ ] Stage 8: Testing and Documentation (Week 3, Second Half)

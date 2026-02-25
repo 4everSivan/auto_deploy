@@ -9,6 +9,24 @@
 
 ### 新增
 
+#### GitHub CI/CD 集成
+- **GitHub Actions**:
+  - 创建了 `.github/workflows/ci.yml`，支持多 Python 版本自动测试。
+  - 集成了代码规范检查 (flake8) 和测试覆盖率报告 (pytest-cov)。
+- **依赖更新**:
+  - `requirements.txt` 添加了 `flake8`, `ruff`, `pytest-cov` 等工具。
+
+#### Stage 6: CLI 界面
+- **CLI 子命令**:
+  - 实现了 `deploy` 命令，支持 `--node`, `--software`, `--dry-run` 和 `-y` 参数。
+- **Rich UI 集成**:
+  - 创建了 `CLIUI` 类 (`deployer/cli_ui.py`)，使用 `rich` 库实现美观的控制台输出。
+  - 接入了实时进度条 (`rich.Live`) 和任务状态统计表格。
+- **全链路 Dry-Run**:
+  - 修改了 `AnsibleWrapper`, `BaseInstaller` 及所有具体安装器，支持 `--dry-run` (check 模式)。
+- **测试**:
+  - 添加了 `tests/test_ctl.py` 验证命令行功能。
+
 #### Stage 5: 执行引擎
 - **TaskManager**:
   - `Task` 数据类：任务定义，包含状态、进度、时间等信息。

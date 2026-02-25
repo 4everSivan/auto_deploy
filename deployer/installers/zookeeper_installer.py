@@ -101,7 +101,8 @@ class ZookeeperInstaller(BaseInstaller):
                 playbook=playbook_path,
                 inventory=self.build_inventory(),
                 extra_vars=extra_vars,
-                node_name=self.node_config.name
+                node_name=self.node_config.name,
+                check=self.dry_run
             )
             
             if result['rc'] == 0:
