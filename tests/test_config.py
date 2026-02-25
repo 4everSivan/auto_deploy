@@ -7,6 +7,7 @@ import tempfile
 import os
 from pathlib import Path
 
+from pydantic import ValidationError
 from deployer.config import Config, get_config
 from deployer.models import NodeConfig, SoftwareConfig
 from common.exceptions import ConfigException
@@ -120,7 +121,7 @@ class TestNodeConfig:
     
     def test_missing_required_fields(self):
         """Test node config with missing required fields."""
-        with pytest.raises(ConfigException, match='Node name is required'):
+        with pytest.raises(ValidationError):
             NodeConfig(
                 name='',
                 host='localhost',
@@ -132,7 +133,7 @@ class TestNodeConfig:
     
     def test_invalid_port(self):
         """Test node config with invalid port."""
-        with pytest.raises(ConfigException, match='Invalid port'):
+        with pytest.raises(ValidationError):
             NodeConfig(
                 name='test',
                 host='localhost',
@@ -140,24 +141,24 @@ class TestNodeConfig:
                 owner_user='test',
                 owner_pass='test',
                 super_pass='test',
-                install=[SoftwareConfig('java', '11', '/opt/java')]
+                install=[SoftwareConfig(name='java', version='11', install_path='/opt/java')]
             )
     
     def test_missing_credentials(self):
         """Test node config without credentials."""
-        with pytest.raises(ConfigException, match='owner_pass or owner_key'):
+        with pytest.raises(ValidationError):
             NodeConfig(
                 name='test',
                 host='localhost',
                 owner_user='test',
                 super_pass='test',
-                install=[SoftwareConfig('java', '11', '/opt/java')]
+                install=[SoftwareConfig(name='java', version='11', install_path='/opt/java')]
             )
     
     def test_get_software_by_name(self):
         """Test getting software by name."""
-        java = SoftwareConfig('java', '11', '/opt/java')
-        python = SoftwareConfig('python', '3.9', '/opt/python')
+        java = SoftwareConfig(name='java', version='11', install_path='/opt/java')
+        python = SoftwareConfig(name='python', version='3.9', install_path='/opt/python')
         node = NodeConfig(
             name='test',
             host='localhost',
@@ -189,12 +190,12 @@ class TestSoftwareConfig:
     
     def test_missing_required_fields(self):
         """Test software config with missing fields."""
-        with pytest.raises(ConfigException, match='Software name is required'):
+        with pytest.raises(ValidationError):
             SoftwareConfig(name='', version='11', install_path='/opt')
     
     def test_invalid_source(self):
         """Test software config with invalid source."""
-        with pytest.raises(ConfigException, match='Invalid source'):
+        with pytest.raises(ValidationError):
             SoftwareConfig(
                 name='java',
                 version='11',
@@ -204,7 +205,7 @@ class TestSoftwareConfig:
     
     def test_missing_source_path_for_url(self):
         """Test URL source without source_path."""
-        with pytest.raises(ConfigException, match='source_path is required'):
+        with pytest.raises(ValidationError):
             SoftwareConfig(
                 name='java',
                 version='11',

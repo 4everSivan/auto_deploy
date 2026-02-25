@@ -30,7 +30,7 @@ class TestCheckResult:
         )
         
         assert result.name == 'Test Check'
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED.value
         assert result.message == 'Test passed'
         assert result.details == {'key': 'value'}
     
@@ -62,7 +62,7 @@ class TestCheckerManager:
             owner_user='testuser',
             owner_pass='testpass',
             super_pass='rootpass',
-            install=[SoftwareConfig('java', '11', '/opt/java')]
+            install=[SoftwareConfig(name='java', version='11', install_path='/opt/java')]
         )
         
         ansible_wrapper = Mock(spec=AnsibleWrapper)
@@ -141,7 +141,7 @@ class TestConnectivityChecker:
             owner_user='testuser',
             owner_pass='testpass',
             super_pass='rootpass',
-            install=[SoftwareConfig('java', '11', '/opt/java')]
+            install=[SoftwareConfig(name='java', version='11', install_path='/opt/java')]
         )
         
         ansible_wrapper = Mock(spec=AnsibleWrapper)
@@ -155,7 +155,7 @@ class TestConnectivityChecker:
         
         result = connectivity_checker.check()
         
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED.value
         assert 'Successfully connected' in result.message
     
     def test_connectivity_check_failure(self, connectivity_checker):
@@ -166,7 +166,7 @@ class TestConnectivityChecker:
         
         result = connectivity_checker.check()
         
-        assert result.status == CheckStatus.FAILED
+        assert result.status == CheckStatus.FAILED.value
         assert 'Failed to connect' in result.message
 
 
@@ -182,7 +182,7 @@ class TestDiskSpaceChecker:
             owner_user='testuser',
             owner_pass='testpass',
             super_pass='rootpass',
-            install=[SoftwareConfig('java', '11', '/opt/java')]
+            install=[SoftwareConfig(name='java', version='11', install_path='/opt/java')]
         )
         
         ansible_wrapper = Mock(spec=AnsibleWrapper)
@@ -201,7 +201,7 @@ class TestDiskSpaceChecker:
         
         result = disk_checker.check()
         
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED.value
         assert 'Sufficient disk space' in result.message
     
     def test_disk_space_insufficient(self, disk_checker):
@@ -213,7 +213,7 @@ class TestDiskSpaceChecker:
         
         result = disk_checker.check()
         
-        assert result.status == CheckStatus.FAILED
+        assert result.status == CheckStatus.FAILED.value
         assert 'Insufficient disk space' in result.message
 
 
@@ -229,7 +229,7 @@ class TestMemoryChecker:
             owner_user='testuser',
             owner_pass='testpass',
             super_pass='rootpass',
-            install=[SoftwareConfig('java', '11', '/opt/java')]
+            install=[SoftwareConfig(name='java', version='11', install_path='/opt/java')]
         )
         
         ansible_wrapper = Mock(spec=AnsibleWrapper)
@@ -248,7 +248,7 @@ class TestMemoryChecker:
         
         result = memory_checker.check()
         
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED.value
         assert 'Sufficient memory' in result.message
 
 
@@ -264,7 +264,7 @@ class TestPortAvailabilityChecker:
             owner_user='testuser',
             owner_pass='testpass',
             super_pass='rootpass',
-            install=[SoftwareConfig('java', '11', '/opt/java')]
+            install=[SoftwareConfig(name='java', version='11', install_path='/opt/java')]
         )
         
         ansible_wrapper = Mock(spec=AnsibleWrapper)
@@ -283,7 +283,7 @@ class TestPortAvailabilityChecker:
         
         result = port_checker.check()
         
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED.value
         assert 'All required ports are available' in result.message
     
     def test_no_ports_to_check(self):
@@ -294,7 +294,7 @@ class TestPortAvailabilityChecker:
             owner_user='testuser',
             owner_pass='testpass',
             super_pass='rootpass',
-            install=[SoftwareConfig('java', '11', '/opt/java')]
+            install=[SoftwareConfig(name='java', version='11', install_path='/opt/java')]
         )
         
         ansible_wrapper = Mock(spec=AnsibleWrapper)
@@ -306,7 +306,7 @@ class TestPortAvailabilityChecker:
         
         result = checker.check()
         
-        assert result.status == CheckStatus.SKIPPED
+        assert result.status == CheckStatus.SKIPPED.value
 
 
 class TestSystemInfoChecker:
@@ -321,7 +321,7 @@ class TestSystemInfoChecker:
             owner_user='testuser',
             owner_pass='testpass',
             super_pass='rootpass',
-            install=[SoftwareConfig('java', '11', '/opt/java')]
+            install=[SoftwareConfig(name='java', version='11', install_path='/opt/java')]
         )
         
         ansible_wrapper = Mock(spec=AnsibleWrapper)
@@ -340,5 +340,98 @@ class TestSystemInfoChecker:
         
         result = system_checker.check()
         
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED.value
         assert 'System:' in result.message
+
+class TestPackageManagerChecker:
+    """Tests for PackageManagerChecker."""
+    
+    @pytest.fixture
+    def package_checker(self):
+        """Create package manager checker for testing."""
+        node_config = NodeConfig(
+            name='test_node',
+            host='192.168.1.1',
+            owner_user='testuser',
+            owner_pass='testpass',
+            super_pass='rootpass',
+            install=[SoftwareConfig(name='java', version='11', install_path='/opt/java')]
+        )
+        
+        ansible_wrapper = Mock(spec=AnsibleWrapper)
+        logger = Mock(spec=DeployLogger)
+        
+        return PackageManagerChecker(node_config, ansible_wrapper, logger)
+    
+    def test_apt_available(self, package_checker):
+        """Test apt availability."""
+        package_checker.run_command = Mock(side_effect=[
+            {'rc': 0, 'stdout': '/usr/bin/apt-get'},
+            {'rc': 0, 'stdout': 'apt 2.0.2'}
+        ])
+        
+        result = package_checker.check()
+        
+        assert result.status == CheckStatus.PASSED.value
+        assert 'apt-get' in result.message
+    
+    def test_yum_available(self, package_checker):
+        """Test yum availability."""
+        package_checker.run_command = Mock(side_effect=[
+            {'rc': 1, 'stdout': ''},  # which apt-get
+            {'rc': 0, 'stdout': '/usr/bin/yum'}, # which yum
+            {'rc': 0, 'stdout': '4.1.3'} # yum --version
+        ])
+        
+        result = package_checker.check()
+        
+        assert result.status == CheckStatus.PASSED.value
+        assert 'yum' in result.message
+    
+    def test_no_package_manager(self, package_checker):
+        """Test no supported package manager found."""
+        package_checker.run_command = Mock(return_value={'rc': 1, 'stdout': ''})
+        
+        result = package_checker.check()
+        
+        assert result.status == CheckStatus.WARNING.value
+        assert 'No supported package manager' in result.message
+
+
+class TestSudoPrivilegeChecker:
+    """Tests for SudoPrivilegeChecker."""
+    
+    @pytest.fixture
+    def sudo_checker(self):
+        """Create sudo privilege checker for testing."""
+        node_config = NodeConfig(
+            name='test_node',
+            host='192.168.1.1',
+            owner_user='testuser',
+            owner_pass='testpass',
+            super_pass='rootpass',
+            install=[SoftwareConfig(name='java', version='11', install_path='/opt/java')]
+        )
+        
+        ansible_wrapper = Mock(spec=AnsibleWrapper)
+        logger = Mock(spec=DeployLogger)
+        
+        return SudoPrivilegeChecker(node_config, ansible_wrapper, logger)
+    
+    def test_sudo_success(self, sudo_checker):
+        """Test successful sudo check."""
+        sudo_checker.run_command = Mock(return_value={'rc': 0, 'stdout': 'root'})
+        
+        result = sudo_checker.check()
+        
+        assert result.status == CheckStatus.PASSED.value
+        assert 'Sudo privileges confirmed' in result.message
+    
+    def test_sudo_failure(self, sudo_checker):
+        """Test failed sudo check."""
+        sudo_checker.run_command = Mock(return_value={'rc': 1, 'stdout': 'permission denied'})
+        
+        result = sudo_checker.check()
+        
+        assert result.status == CheckStatus.FAILED.value
+        assert 'Failed to execute command with sudo' in result.message

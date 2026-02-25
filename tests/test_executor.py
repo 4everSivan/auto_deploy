@@ -29,7 +29,7 @@ class TestDeploymentExecutor:
             owner_user='user1',
             owner_pass='pass1',
             super_pass='root1',
-            install=[SoftwareConfig('java', '11', '/opt/java')]
+            install=[SoftwareConfig(name='java', version='11', install_path='/opt/java')]
         )
         
         config.get_nodes.return_value = [node1]
@@ -104,8 +104,8 @@ class TestDeploymentExecutor:
             owner_pass='pass',
             super_pass='root',
             install=[
-                SoftwareConfig('java', '11', '/opt/java'),
-                SoftwareConfig('python', '3.9', '/opt/python')
+                SoftwareConfig(name='java', version='11', install_path='/opt/java'),
+                SoftwareConfig(name='python', version='3.9', install_path='/opt/python')
             ]
         )
         
@@ -171,3 +171,91 @@ class TestDeploymentExecutor:
         assert results['failed'] == 0
         assert results['passed'] == 4
         mock_manager.run_all.assert_called_once()
+
+    def test_executor_lifecycle_status(self, executor):
+        """Test status flags (is_running, is_paused, is_stopped)."""
+        # Initially not running
+        assert not executor.is_running()
+        assert not executor.is_paused()
+        assert not executor.is_stopped()
+        
+        # Pause
+        executor.pause()
+        assert executor.is_paused()
+        
+        # Stop
+        executor.stop()
+        assert executor.is_stopped()
+        assert not executor.is_paused() # Stop clears pause
+
+    def test_execute_node_check_failure(self, executor):
+        """Test node execution stop on pre-check failure."""
+        node = executor.config.get_nodes()[0]
+        
+        with patch.object(executor, '_run_checkers') as mock_run_checkers:
+            mock_run_checkers.return_value = {'failed': 1, 'passed': 0}
+            
+            executor._execute_node(node)
+            
+            # First task should be failed
+            task = executor.task_manager.get_node_tasks(node.name)[0]
+            assert task.status == TaskStatus.FAILED
+            assert 'Pre-installation checks failed' in task.error_message
+
+    @patch('deployer.executor.DeploymentExecutor._get_installer')
+    def test_execute_node_install_failure(self, mock_get_installer, executor):
+        """Test node execution stop on installation failure."""
+        node = executor.config.get_nodes()[0]
+        
+        # Mock pre-checks to pass
+        with patch.object(executor, '_run_checkers', return_value={'failed': 0}):
+            # Mock installer failure
+            mock_installer = Mock()
+            mock_installer.install.return_value = {'status': 'failed', 'message': 'Disk full'}
+            mock_get_installer.return_value = mock_installer
+            
+            executor._execute_node(node)
+            
+            task = executor.task_manager.get_node_tasks(node.name)[0]
+            assert task.status == TaskStatus.FAILED
+            assert 'Installation failed: Disk full' in task.error_message
+
+    @patch('deployer.executor.DeploymentExecutor._get_installer')
+    def test_execute_node_verify_failure(self, mock_get_installer, executor):
+        """Test node execution stop on verification failure."""
+        node = executor.config.get_nodes()[0]
+        
+        with patch.object(executor, '_run_checkers', return_value={'failed': 0}):
+            mock_installer = Mock()
+            mock_installer.install.return_value = {'status': 'success'}
+            mock_installer.post_config.return_value = {'status': 'success'}
+            mock_installer.verify.return_value = {'status': 'failed', 'message': 'Service not running'}
+            mock_get_installer.return_value = mock_installer
+            
+            executor._execute_node(node)
+            
+            task = executor.task_manager.get_node_tasks(node.name)[0]
+            assert task.status == TaskStatus.FAILED
+            assert 'Verification failed: Service not running' in task.error_message
+
+    def test_execute_all_with_stop(self, executor):
+        """Test execute_all stops submission if event is set."""
+        executor.config.get_nodes.return_value = [
+            Mock(spec=NodeConfig, name='n1'),
+            Mock(spec=NodeConfig, name='n2')
+        ]
+        
+        executor.stop()
+        futures = executor.execute_all()
+        
+        assert len(futures) == 0
+
+    def test_callback_error_handling(self, executor):
+        """Test that callback errors don't crash the executor."""
+        bad_callback = Mock(side_effect=Exception("Boom"))
+        executor.register_callback('on_task_start', bad_callback)
+        
+        task = Mock()
+        # Should not raise exception
+        executor._trigger_callback('on_task_start', task)
+        bad_callback.assert_called_once()

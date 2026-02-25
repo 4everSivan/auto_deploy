@@ -37,7 +37,8 @@ def get_installer(software_name: str) -> Any:
     Raises:
         ValueError: If installer not found
     """
-    if software_name not in INSTALLER_REGISTRY:
+    name_lower = software_name.lower()
+    if name_lower not in INSTALLER_REGISTRY:
         raise ValueError(f"No installer found for: {software_name}")
     
-    return INSTALLER_REGISTRY[software_name]
+    return INSTALLER_REGISTRY[name_lower]

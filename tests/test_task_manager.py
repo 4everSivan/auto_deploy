@@ -130,8 +130,8 @@ class TestTaskManager:
             owner_pass='pass1',
             super_pass='root1',
             install=[
-                SoftwareConfig('java', '11', '/opt/java'),
-                SoftwareConfig('python', '3.9', '/opt/python')
+                SoftwareConfig(name='java', version='11', install_path='/opt/java'),
+                SoftwareConfig(name='python', version='3.9', install_path='/opt/python')
             ]
         )
         
@@ -142,7 +142,7 @@ class TestTaskManager:
             owner_pass='pass2',
             super_pass='root2',
             install=[
-                SoftwareConfig('zookeeper', '3.7.1', '/opt/zookeeper')
+                SoftwareConfig(name='zookeeper', version='3.7.1', install_path='/opt/zookeeper')
             ]
         )
         

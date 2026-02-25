@@ -78,6 +78,12 @@
   - [x] T6.5.3: Refine error handling & exception chains (Rule 4.1)
   - [x] T6.5.4: Implement async execution where applicable (Rule 5.1)
   - [x] T6.5.5: Fix PEP 8 & linting issues (Rule 6.1, 6.3)
+- [x] Stage 6.6: Test Coverage Expansion (Week 3, Pre-TUI)
+  - [x] T6.6.1: Implement `test_ansible_wrapper.py`
+  - [x] T6.6.2: Expand `test_executor.py` for edge cases
+  - [x] T6.6.3: Implement missing Checker tests (PackageManager, Sudo)
+  - [x] T6.6.4: Expand Installer tests
+  - [x] T6.6.5: Achieve > 80% total coverage
 - [ ] Stage 7: TUI Interface (Week 3, First Half)
   - [ ] T7.1-T7.10: TUI components
 - [ ] Stage 8: Testing and Documentation (Week 3, Second Half)
