@@ -72,6 +72,12 @@
 - [x] GitHub CI/CD Integration
   - [x] Create .github/workflows/ci.yml
   - [x] Add linting and coverage checks
+- [x] Stage 6.5: Constitution Remediation (Week 2, Final Touch)
+  - [x] T6.5.1: Migrate models to Pydantic (Rule 2.7)
+  - [x] T6.5.2: Standardize type annotations & mypy strict (Rule 2.1)
+  - [x] T6.5.3: Refine error handling & exception chains (Rule 4.1)
+  - [x] T6.5.4: Implement async execution where applicable (Rule 5.1)
+  - [x] T6.5.5: Fix PEP 8 & linting issues (Rule 6.1, 6.3)
 - [ ] Stage 7: TUI Interface (Week 3, First Half)
   - [ ] T7.1-T7.10: TUI components
 - [ ] Stage 8: Testing and Documentation (Week 3, Second Half)

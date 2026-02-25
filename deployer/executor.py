@@ -43,7 +43,7 @@ class DeploymentExecutor:
         # Thread pool for concurrent node execution
         self.max_workers = config.get_max_concurrent_nodes()
         self.executor = ThreadPoolExecutor(max_workers=self.max_workers)
-        self.futures: Dict[str, Future] = {}
+        self.futures: Dict[str, Future[None]] = {}
         
         # Ansible wrapper
         self.ansible = AnsibleWrapper(logger)
@@ -55,9 +55,9 @@ class DeploymentExecutor:
         self.pause_event.set()  # Initially not paused
         
         # Callbacks
-        self.callbacks: Dict[str, List[Callable]] = {}
+        self.callbacks: Dict[str, List[Callable[..., Any]]] = {}
     
-    def register_callback(self, event: str, callback: Callable) -> None:
+    def register_callback(self, event: str, callback: Callable[..., Any]) -> None:
         """
         Register a callback for an event.
         
@@ -69,7 +69,7 @@ class DeploymentExecutor:
             self.callbacks[event] = []
         self.callbacks[event].append(callback)
     
-    def _trigger_callback(self, event: str, *args, **kwargs) -> None:
+    def _trigger_callback(self, event: str, *args: Any, **kwargs: Any) -> None:
         """
         Trigger callbacks for an event.
         
@@ -85,7 +85,7 @@ class DeploymentExecutor:
                 except Exception as e:
                     self.logger.error(f'Callback error for {event}: {e}')
     
-    def execute_all(self) -> List[Future]:
+    def execute_all(self) -> List[Future[None]]:
         """
         Execute deployment for all nodes concurrently.
         
@@ -109,6 +109,11 @@ class DeploymentExecutor:
             self.logger.info(f'Submitted node {node.name} for execution')
         
         return futures
+    
+    def _is_task_running(self, node_name: str) -> bool:
+        """Check if any task is running for a node."""
+        tasks = self.task_manager.get_node_tasks(node_name)
+        return bool(any(task.status == TaskStatus.RUNNING for task in tasks))
     
     def _execute_node(self, node: NodeConfig) -> None:
         """
@@ -256,14 +261,14 @@ class DeploymentExecutor:
         Returns:
             True if there are errors
         """
-        return check_results.get('failed', 0) > 0
+        return int(check_results.get('failed', 0)) > 0
     
     def _get_installer(
         self,
         software_name: str,
         node: NodeConfig,
         software: SoftwareConfig
-    ):
+    ) -> Any:
         """
         Get installer instance for software.
         

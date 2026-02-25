@@ -4,7 +4,7 @@ Utility functions for the auto-deploy project.
 
 import os
 import re
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from pathlib import Path
 
 
@@ -65,7 +65,7 @@ def format_bytes(bytes_size: int) -> str:
     for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
         if bytes_size < 1024.0:
             return f"{bytes_size:.1f} {unit}"
-        bytes_size /= 1024.0
+        bytes_size = int(bytes_size / 1024.0)
     return f"{bytes_size:.1f} PB"
 
 
@@ -93,7 +93,7 @@ def format_duration(seconds: float) -> str:
     return " ".join(parts)
 
 
-def sanitize_log_message(message: str, mask_patterns: Optional[list] = None) -> str:
+def sanitize_log_message(message: str, mask_patterns: Optional[List[str]] = None) -> str:
     """
     Sanitize log message by masking sensitive information.
     

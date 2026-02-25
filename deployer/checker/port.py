@@ -2,13 +2,14 @@
 Port availability checker.
 """
 
+from typing import List, Optional, Any, Dict
 from deployer.checker.base import BaseChecker, CheckResult, CheckStatus
 
 
 class PortAvailabilityChecker(BaseChecker):
     """Check if required ports are available."""
     
-    def __init__(self, *args, ports: list = None, **kwargs):
+    def __init__(self, *args: Any, ports: Optional[List[int]] = None, **kwargs: Any) -> None:
         """
         Initialize port availability checker.
         
@@ -22,7 +23,7 @@ class PortAvailabilityChecker(BaseChecker):
         """Check if required ports are available."""
         if not self.ports:
             return CheckResult(
-                name='Port Availability',
+                'Port Availability',
                 status=CheckStatus.SKIPPED,
                 message='No ports to check',
                 details={}
@@ -43,14 +44,14 @@ class PortAvailabilityChecker(BaseChecker):
             
             if not occupied_ports:
                 return CheckResult(
-                    name='Port Availability',
+                    'Port Availability',
                     status=CheckStatus.PASSED,
                     message=f'All required ports are available: {self.ports}',
                     details={'ports': self.ports, 'occupied': []}
                 )
             else:
                 return CheckResult(
-                    name='Port Availability',
+                    'Port Availability',
                     status=CheckStatus.WARNING,
                     message=f'Some ports are occupied: {occupied_ports}',
                     details={'ports': self.ports, 'occupied': occupied_ports}
@@ -58,7 +59,7 @@ class PortAvailabilityChecker(BaseChecker):
                 
         except Exception as e:
             return CheckResult(
-                name='Port Availability',
+                'Port Availability',
                 status=CheckStatus.FAILED,
                 message=f'Error checking ports: {e}',
                 details={'error': str(e)}

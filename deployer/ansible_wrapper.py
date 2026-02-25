@@ -7,7 +7,7 @@ import tempfile
 from typing import Dict, Any, Optional, List
 from pathlib import Path
 
-import ansible_runner
+import ansible_runner  # type: ignore[import-untyped]
 
 from common.exceptions import AnsibleException, ConnectionException
 from common.logger import DeployLogger

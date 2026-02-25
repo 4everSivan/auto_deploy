@@ -2,6 +2,7 @@
 System information checker.
 """
 
+from typing import Any, Dict
 from deployer.checker.base import BaseChecker, CheckResult, CheckStatus
 
 
@@ -37,7 +38,7 @@ class SystemInfoChecker(BaseChecker):
                 info['total_memory_mb'] = int(result['stdout'].strip())
             
             return CheckResult(
-                name='System Info',
+                'System Info',
                 status=CheckStatus.PASSED,
                 message=f"System: {info.get('pretty_name', 'Unknown')}, Kernel: {info.get('kernel', 'Unknown')}",
                 details=info
@@ -45,7 +46,7 @@ class SystemInfoChecker(BaseChecker):
             
         except Exception as e:
             return CheckResult(
-                name='System Info',
+                'System Info',
                 status=CheckStatus.WARNING,
                 message=f'Could not gather full system info: {e}',
                 details={'error': str(e)}

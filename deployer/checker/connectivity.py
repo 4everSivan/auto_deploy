@@ -2,6 +2,7 @@
 SSH connectivity checker.
 """
 
+from typing import Dict, Any
 from deployer.checker.base import BaseChecker, CheckResult, CheckStatus
 from common.exceptions import ConnectionException
 

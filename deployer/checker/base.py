@@ -3,7 +3,7 @@ Base classes for pre-installation checkers.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Dict, List, Any, Optional, Union, cast
 from enum import Enum
 
 from deployer.models import NodeConfig
@@ -25,35 +25,50 @@ class CheckResult:
     def __init__(
         self,
         name: str,
-        status: CheckStatus,
-        message: str,
-        details: Dict[str, Any] = None
-    ):
+        status: Union[str, CheckStatus],
+        message: str = "",
+        details: Optional[Dict[str, Any]] = None
+    ) -> None:
         """
         Initialize check result.
         
         Args:
-            name: Check name
-            status: Check status
+            name: Name of the check
+            status: Check status (passed, failed, warning, skipped)
             message: Result message
             details: Additional details
         """
         self.name = name
-        self.status = status
+        if isinstance(status, CheckStatus):
+            self.status = str(status.value)
+        else:
+            self.status = str(status)
         self.message = message
         self.details = details or {}
+    
+    def is_passed(self) -> bool:
+        """Check if check passed."""
+        return self.status == CheckStatus.PASSED.value
+
+    def is_warning(self) -> bool:
+        """Check if check has warning."""
+        return self.status == CheckStatus.WARNING.value
+
+    def is_failed(self) -> bool:
+        """Check if check failed."""
+        return self.status == CheckStatus.FAILED.value
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
             'name': self.name,
-            'status': self.status.value,
+            'status': self.status,
             'message': self.message,
             'details': self.details
         }
     
     def __repr__(self) -> str:
-        return f"CheckResult(name={self.name}, status={self.status.value}, message={self.message})"
+        return f"CheckResult({self.name}, status={self.status}, message={self.message})"
 
 
 class BaseChecker(ABC):
@@ -166,19 +181,19 @@ class CheckerManager:
                 result = checker.check()
                 results.append(result.to_dict())
                 
-                if result.status == CheckStatus.PASSED:
+                if result.status == CheckStatus.PASSED.value:
                     passed += 1
                     self.logger.info(
                         f'✓ {result.name}: {result.message}',
                         node=self.node_config.name
                     )
-                elif result.status == CheckStatus.WARNING:
+                elif result.status == CheckStatus.WARNING.value:
                     warnings += 1
                     self.logger.warning(
                         f'⚠ {result.name}: {result.message}',
                         node=self.node_config.name
                     )
-                elif result.status == CheckStatus.FAILED:
+                elif result.status == CheckStatus.FAILED.value:
                     failed += 1
                     self.logger.error(
                         f'✗ {result.name}: {result.message}',

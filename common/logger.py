@@ -12,7 +12,7 @@ from common.utils import ensure_dir, sanitize_log_message
 class DeployLogger:
     """Deployment logger manager with support for main and per-node logging."""
     
-    def __init__(self, log_dir: str, log_level: str = "INFO"):
+    def __init__(self, log_dir: str, log_level: str = "INFO") -> None:
         """
         Initialize logger manager.
         

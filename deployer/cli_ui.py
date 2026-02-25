@@ -9,12 +9,12 @@ from rich.panel import Panel
 from rich.live import Live
 from typing import Dict, List, Any
 
-from deployer.task_manager import Task, TaskStatus
+from deployer.task_manager import Task, TaskStatus, TaskManager # Added TaskManager import
 
 class CLIUI:
     """Helper class for CLI terminal interface using rich."""
     
-    def __init__(self):
+    def __init__(self, task_manager: TaskManager, dry_run: bool = False) -> None:
         self.console = Console()
         self.progress = Progress(
             SpinnerColumn(),
@@ -23,9 +23,11 @@ class CLIUI:
             TaskProgressColumn(),
             TimeElapsedColumn(),
         )
-        self.node_tasks = {} # node_name -> rich_task_id
+        self.node_tasks: Dict[Any, Any] = {} # node_name -> rich_task_id
+        self.task_manager = task_manager # Added from __init__ parameter
+        self.dry_run = dry_run # Added from __init__ parameter
         
-    def print_banner(self):
+    def print_banner(self) -> None:
         """Print application banner."""
         self.console.print(Panel.fit(
             "[bold cyan]Auto-Deploy Engine[/bold cyan]\n"
@@ -33,7 +35,7 @@ class CLIUI:
             border_style="blue"
         ))
         
-    def print_dry_run_warning(self):
+    def print_dry_run_warning(self) -> None:
         """Print dry-run warning."""
         self.console.print("[bold yellow]⚠️  DRY RUN MODE ENABLED. No changes will be made to remote systems.[/bold yellow]\n")
 
@@ -61,7 +63,7 @@ class CLIUI:
         from rich.prompt import Confirm
         return Confirm.ask("Do you want to proceed with the deployment?")
 
-    def show_summary(self, statistics: Dict[str, int], total_duration: float):
+    def show_summary(self, statistics: Dict[str, int], total_duration: float) -> None:
         """
         Show final deployment summary.
         
@@ -82,14 +84,29 @@ class CLIUI:
         self.console.print(table)
         self.console.print("="*40 + "\n")
 
-    def print_error(self, message: str):
+    def print_error(self, message: str) -> None:
         """Print error message."""
         self.console.print(f"[bold red]Error:[/bold red] {message}")
 
-    def print_info(self, message: str):
+    def print_info(self, message: str) -> None:
         """Print info message."""
         self.console.print(f"[bold blue]Info:[/bold blue] {message}")
 
-    def print_success(self, message: str):
+    def print_success(self, message: str) -> None:
         """Print success message."""
         self.console.print(f"[bold green]Success:[/bold green] {message}")
+
+    def update_status(self, live: Live) -> None: # New method
+        """Update the live display with current task statuses."""
+        for node_name, task_id in self.node_tasks.items():
+            task_status = self.task_manager.get_node_status(node_name)
+            if task_status:
+                description = f"[bold]{node_name}[/bold]: {task_status.software_name}"
+                self.progress.update(task_id, description=description, completed=task_status.progress)
+                if task_status.status == TaskStatus.COMPLETED:
+                    self.progress.update(task_id, description=f"[bold green]{node_name}[/bold green]: [green]Completed[/green]", completed=100)
+                elif task_status.status == TaskStatus.FAILED:
+                    self.progress.update(task_id, description=f"[bold red]{node_name}[/bold red]: [red]Failed[/red]", completed=100)
+                elif task_status.status == TaskStatus.SKIPPED:
+                    self.progress.update(task_id, description=f"[bold yellow]{node_name}[/bold yellow]: [yellow]Skipped[/yellow]", completed=100)
+        live.update(self.progress) # Ensure live display is updated

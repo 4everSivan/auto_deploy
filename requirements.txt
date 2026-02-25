@@ -4,6 +4,7 @@ ansible<=8.5.0
 click<=8.1.8
 textual<=0.47.0
 pyyaml<=6.0.3
+pydantic>=2.0.0
 
 # UI and formatting
 rich>=13.0.0

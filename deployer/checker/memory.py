@@ -2,13 +2,14 @@
 Memory checker.
 """
 
+from typing import Any, Dict
 from deployer.checker.base import BaseChecker, CheckResult, CheckStatus
 
 
 class MemoryChecker(BaseChecker):
     """Check available memory."""
     
-    def __init__(self, *args, min_memory_mb: int = 512, **kwargs):
+    def __init__(self, *args: Any, min_memory_mb: int = 512, **kwargs: Any) -> None:
         """
         Initialize memory checker.
         
@@ -29,7 +30,7 @@ class MemoryChecker(BaseChecker):
             
             if result['rc'] != 0:
                 return CheckResult(
-                    name='Memory',
+                    'Memory',
                     status=CheckStatus.FAILED,
                     message='Failed to check memory',
                     details={'error': result.get('stderr', 'Unknown error')}
@@ -40,7 +41,7 @@ class MemoryChecker(BaseChecker):
             
             if available_mb >= self.min_memory_mb:
                 return CheckResult(
-                    name='Memory',
+                    'Memory',
                     status=CheckStatus.PASSED,
                     message=f'Sufficient memory: {available_mb}MB available (required: {self.min_memory_mb}MB)',
                     details={
@@ -50,7 +51,7 @@ class MemoryChecker(BaseChecker):
                 )
             else:
                 return CheckResult(
-                    name='Memory',
+                    'Memory',
                     status=CheckStatus.WARNING,
                     message=f'Low memory: {available_mb}MB available (recommended: {self.min_memory_mb}MB)',
                     details={
@@ -61,7 +62,7 @@ class MemoryChecker(BaseChecker):
                 
         except Exception as e:
             return CheckResult(
-                name='Memory',
+                'Memory',
                 status=CheckStatus.FAILED,
                 message=f'Error checking memory: {e}',
                 details={'error': str(e)}

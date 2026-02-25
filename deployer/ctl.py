@@ -1,7 +1,7 @@
 import click
 import importlib.resources
 import time
-from typing import Optional
+from typing import Optional, Any, Dict
 
 from deployer.version import __version__
 from deployer.config import Config
@@ -20,6 +20,8 @@ def ctl(ctx: click.Context, config_file: Optional[str]) -> None:
         if ctx.invoked_subcommand in ['version', 'generate-config']:
             return
 
+        if config_file is None:
+            config_file = 'deploy.yml'  # Default if not provided
         config = Config(config_file)
 
         # 设置命令上下文
@@ -42,9 +44,14 @@ def version() -> None:
 @click.option('--dry-run', is_flag=True, help='Preview deployment without applying changes')
 @click.option('--yes', '-y', is_flag=True, help='Automatically confirm deployment')
 @click.pass_context
-def deploy(ctx: click.Context, node: tuple, software: tuple, dry_run: bool, yes: bool) -> None:
-    config = ctx.obj['__config']
-    ui = CLIUI()
+def deploy(ctx: click.Context, node: tuple[str, ...], software: tuple[str, ...], dry_run: bool, yes: bool) -> None:
+    config: Config = ctx.obj['__config']
+    
+    # Task Manager
+    task_manager = TaskManager(config)
+    task_manager.create_tasks()
+    
+    ui = CLIUI(task_manager, dry_run=dry_run)
     
     # Setup logger
     log_dir = config.get_log_dir()
@@ -54,10 +61,6 @@ def deploy(ctx: click.Context, node: tuple, software: tuple, dry_run: bool, yes:
     ui.print_banner()
     if dry_run:
         ui.print_dry_run_warning()
-    
-    # Task Manager
-    task_manager = TaskManager(config)
-    task_manager.create_tasks()
     
     # Filter nodes if specified
     all_nodes = config.get_nodes()
@@ -84,9 +87,9 @@ def deploy(ctx: click.Context, node: tuple, software: tuple, dry_run: bool, yes:
     
     with Live(ui.progress, refresh_per_second=4, console=ui.console):
         # Register callbacks to update progress
-        node_tasks = {}
+        node_tasks: Dict[str, Any] = {}
         
-        def on_task_start(task):
+        def on_task_start(task: Any) -> None:
             if task.node_name not in node_tasks:
                 node_tasks[task.node_name] = ui.progress.add_task(
                     f"[cyan]{task.node_name}[/cyan]: {task.software_name}", 
@@ -99,11 +102,11 @@ def deploy(ctx: click.Context, node: tuple, software: tuple, dry_run: bool, yes:
                     completed=0
                 )
         
-        def on_task_complete(task):
+        def on_task_complete(task: Any) -> None:
             if task.node_name in node_tasks:
                 ui.progress.update(node_tasks[task.node_name], completed=100)
                 
-        def on_task_fail(task, error):
+        def on_task_fail(task: Any, error: str) -> None:
             if task.node_name in node_tasks:
                 ui.progress.update(
                     node_tasks[task.node_name], 

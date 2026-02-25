@@ -1,8 +1,9 @@
 import os
 import yaml
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, cast
 
+from pydantic import ValidationError
 from common.utils import expand_path
 from common.exceptions import ConfigException
 from deployer.models import NodeConfig, SoftwareConfig
@@ -10,20 +11,19 @@ from deployer.models import NodeConfig, SoftwareConfig
 
 class Config:
     """Configuration manager for deployment settings."""
+    _effective_config: Dict[str, Any]
+    _nodes: List[NodeConfig]
 
-    def __init__(self, config_file: str) -> None:
+    def __init__(self, config_file: str):
         """
-        Initialize configuration object.
+        Initialize configuration.
 
         Args:
-            config_file: Path to configuration file
-
-        Raises:
-            ConfigException: If configuration is invalid
+            config_file: Path to YAML configuration file
         """
-        self.config_file = config_file
-        self._effective_config = self._build_effective_configuration()
+        self.config_file: str = config_file
         self._nodes: List[NodeConfig] = []
+        self._effective_config: Dict[str, Any] = self._build_effective_configuration()
         self._parse_nodes()
 
     def __contains__(self, key: str) -> bool:
@@ -38,7 +38,7 @@ class Config:
         """Get configuration value with default."""
         return self._effective_config.get(key, default)
 
-    def _build_effective_configuration(self) -> Dict:
+    def _build_effective_configuration(self) -> Dict[str, Any]:
         """
         Read YAML file and merge with defaults.
 
@@ -49,7 +49,7 @@ class Config:
             ConfigException: If configuration is invalid
         """
 
-        def __deep_update(base: Dict, overrides: Dict) -> Dict:
+        def __deep_update(base: Dict[str, Any], overrides: Dict[str, Any]) -> Dict[str, Any]:
             """
             Deep merge dictionaries.
 
@@ -93,31 +93,34 @@ class Config:
 
         # Merge with defaults
         effective_config = __deep_update(effective_config, loaded)
+        effective_config = cast(Dict[str, Any], effective_config)
 
         # Process general settings
-        general = effective_config.get('general', {})
-        log_cfg = effective_config.get('log', {})
+        general_cfg = cast(Dict[str, Any], effective_config.get('general', {}))
+        log_cfg = cast(Dict[str, Any], effective_config.get('log', {}))
 
         # Expand paths
-        data_dir = expand_path(general.get('data_dir', './deploy_data'))
-        log_dir = expand_path(log_cfg.get('dir', './deploy_data/log'))
+        data_dir = expand_path(str(general_cfg.get('data_dir', './deploy_data')))
+        log_dir = expand_path(str(log_cfg.get('dir', './deploy_data/log')))
 
-        effective_config['general']['data_dir'] = data_dir
-        effective_config['log']['dir'] = log_dir
+        general_cfg['data_dir'] = data_dir
+        log_cfg['dir'] = log_dir
+        effective_config['general'] = general_cfg
+        effective_config['log'] = log_cfg
 
         # Validate log level
         level = str(log_cfg.get('level', 'INFO')).upper()
         if level not in {'DEBUG', 'INFO', 'WARNING', 'ERROR'}:
             raise ConfigException(f'Invalid log level: {level}')
-        effective_config['log']['level'] = level
+        log_cfg['level'] = level
 
         # Validate max_concurrent_nodes
-        max_concurrent = general.get('max_concurrent_nodes', 10)
+        max_concurrent = general_cfg.get('max_concurrent_nodes', 10)
         if not isinstance(max_concurrent, int) or max_concurrent < 1:
             raise ConfigException(
                 f'max_concurrent_nodes must be a positive integer, got: {max_concurrent}'
             )
-        effective_config['general']['max_concurrent_nodes'] = max_concurrent
+        general_cfg['max_concurrent_nodes'] = max_concurrent
 
         # Check directory write permissions
         for d in [data_dir, log_dir]:
@@ -150,73 +153,64 @@ class Config:
         Raises:
             ConfigException: If node configuration is invalid
         """
-        nodes_config = self._effective_config.get('nodes', [])
+        nodes_config = cast(List[Dict[str, Any]], self._effective_config.get('nodes', []))
 
         for node_dict in nodes_config:
-            if not isinstance(node_dict, dict):
+            # The node_dict should be a dictionary with a single key (the node name)
+            # and its value being the node's configuration.
+            # Example: {'node1': {'host': '192.168.1.1'}}
+            if not isinstance(node_dict, dict) or len(node_dict) != 1:
                 raise ConfigException(f'Invalid node configuration: {node_dict}')
 
-            # Each node should have exactly one key (the node name)
-            if len(node_dict) != 1:
-                raise ConfigException(
-                    f'Each node must have exactly one name key, got: {list(node_dict.keys())}'
-                )
-
             node_name = list(node_dict.keys())[0]
-            node_data = node_dict[node_name]
+            node_data = cast(Dict[str, Any], node_dict[node_name])
 
             if not isinstance(node_data, dict):
                 raise ConfigException(f'Node {node_name} configuration must be a dictionary')
 
             try:
-                # Parse software installations
-                install_list = []
-                for software_dict in node_data.get('install', []):
-                    if not isinstance(software_dict, dict):
-                        raise ConfigException(
-                            f'Invalid software configuration in node {node_name}: {software_dict}'
-                        )
+                # Prepare install list
+                install_list_raw = cast(List[Dict[str, Any]], node_data.get('install', []))
+                install_data: List[SoftwareConfig] = []
+                for software_dict_raw in install_list_raw:
+                    if not isinstance(software_dict_raw, dict) or len(software_dict_raw) != 1:
+                        raise ConfigException(f'Invalid software configuration in node {node_name}')
+                    
+                    sw_name = list(software_dict_raw.keys())[0]
+                    sw_data = cast(Dict[str, Any], software_dict_raw[sw_name])
+                    if not isinstance(sw_data, dict):
+                        sw_data = {}
+                    
+                    # Merge defaults
+                    sw_pydantic_data = sw_data.copy()
+                    sw_pydantic_data['name'] = sw_name
+                    
+                    try:
+                        software_config = SoftwareConfig.model_validate(sw_pydantic_data)
+                        install_data.append(software_config)
+                    except ValidationError as e:
+                        raise ConfigException(f'Software validation error for {sw_name}: {e}')
 
-                    # Each software should have exactly one key (the software name)
-                    if len(software_dict) != 1:
-                        raise ConfigException(
-                            f'Each software must have exactly one name key in node {node_name}'
-                        )
+                # Prepare node data for Pydantic
+                node_pydantic_data = {
+                    "name": node_name,
+                    "host": node_data.get('host', ''),
+                    "port": node_data.get('port', 22),
+                    "owner_user": node_data.get('owner_user', ''),
+                    "owner_pass": node_data.get('owner_pass'),
+                    "owner_key": node_data.get('owner_key'),
+                    "super_user": node_data.get('super_user', 'root'),
+                    "super_pass": node_data.get('super_pass'),
+                    "super_key": node_data.get('super_key'),
+                    "install": install_data
+                }
 
-                    software_name = list(software_dict.keys())[0]
-                    software_data = software_dict[software_name]
-
-                    if not isinstance(software_data, dict):
-                        software_data = {}
-
-                    software_config = SoftwareConfig(
-                        name=software_name,
-                        version=software_data.get('version', 'latest'),
-                        install_path=software_data.get('install_path', f'/usr/local/{software_name}'),
-                        source=software_data.get('source', 'repository'),
-                        source_path=software_data.get('source_path'),
-                        config=software_data.get('config', {})
-                    )
-                    install_list.append(software_config)
-
-                # Create NodeConfig
-                node_config = NodeConfig(
-                    name=node_name,
-                    host=node_data.get('host', ''),
-                    port=node_data.get('port', 22),
-                    owner_user=node_data.get('owner_user', ''),
-                    owner_pass=node_data.get('owner_pass'),
-                    owner_key=node_data.get('owner_key'),
-                    super_user=node_data.get('super_user', 'root'),
-                    super_pass=node_data.get('super_pass'),
-                    super_key=node_data.get('super_key'),
-                    install=install_list
-                )
-
+                # Validate using Pydantic
+                node_config = NodeConfig.model_validate(node_pydantic_data)
                 self._nodes.append(node_config)
 
-            except ConfigException:
-                raise
+            except ValidationError as e:
+                raise ConfigException(f'Validation error for node {node_name}: {e}')
             except Exception as e:
                 raise ConfigException(f'Error parsing node {node_name}: {e}')
 
@@ -244,19 +238,23 @@ class Config:
 
     def get_max_concurrent_nodes(self) -> int:
         """Get maximum number of concurrent nodes."""
-        return self._effective_config['general']['max_concurrent_nodes']
+        val = self._effective_config['general']['max_concurrent_nodes']
+        return int(val)
 
     def get_data_dir(self) -> str:
         """Get data directory path."""
-        return self._effective_config['general']['data_dir']
+        val = self._effective_config['general']['data_dir']
+        return str(val)
 
     def get_log_dir(self) -> str:
         """Get log directory path."""
-        return self._effective_config['log']['dir']
+        val = self._effective_config['log']['dir']
+        return str(val)
 
     def get_log_level(self) -> str:
         """Get log level."""
-        return self._effective_config['log']['level']
+        val = self._effective_config['log']['level']
+        return str(val)
 
 
 def get_config(config_file: str) -> Config:

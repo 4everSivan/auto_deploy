@@ -2,13 +2,15 @@
 Disk space checker.
 """
 
+from typing import Any, Dict
+
 from deployer.checker.base import BaseChecker, CheckResult, CheckStatus
 
 
 class DiskSpaceChecker(BaseChecker):
     """Check available disk space."""
     
-    def __init__(self, *args, min_space_mb: int = 1024, **kwargs):
+    def __init__(self, *args: Any, min_space_mb: int = 1000, **kwargs: Any) -> None:
         """
         Initialize disk space checker.
         
@@ -29,7 +31,7 @@ class DiskSpaceChecker(BaseChecker):
             
             if result['rc'] != 0:
                 return CheckResult(
-                    name='Disk Space',
+                    'Disk Space',
                     status=CheckStatus.FAILED,
                     message='Failed to check disk space',
                     details={'error': result.get('stderr', 'Unknown error')}
@@ -41,7 +43,7 @@ class DiskSpaceChecker(BaseChecker):
             
             if available_mb >= self.min_space_mb:
                 return CheckResult(
-                    name='Disk Space',
+                    'Disk Space',
                     status=CheckStatus.PASSED,
                     message=f'Sufficient disk space: {available_mb}MB available (required: {self.min_space_mb}MB)',
                     details={
@@ -51,7 +53,7 @@ class DiskSpaceChecker(BaseChecker):
                 )
             else:
                 return CheckResult(
-                    name='Disk Space',
+                    'Disk Space',
                     status=CheckStatus.FAILED,
                     message=f'Insufficient disk space: {available_mb}MB available (required: {self.min_space_mb}MB)',
                     details={
@@ -62,7 +64,7 @@ class DiskSpaceChecker(BaseChecker):
                 
         except Exception as e:
             return CheckResult(
-                name='Disk Space',
+                'Disk Space',
                 status=CheckStatus.FAILED,
                 message=f'Error checking disk space: {e}',
                 details={'error': str(e)}

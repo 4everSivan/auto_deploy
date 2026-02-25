@@ -4,7 +4,7 @@ Task management module for deployment tasks.
 
 from enum import Enum
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import time
 
 from deployer.config import Config
@@ -68,7 +68,7 @@ class Task:
             return time.time() - self.start_time
         return None
     
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
             'task_id': self.task_id,
@@ -144,6 +144,26 @@ class TaskManager:
         """
         task_ids = self.node_tasks.get(node_name, [])
         return [self.tasks[tid] for tid in task_ids if tid in self.tasks]
+
+    def get_node_status(self, node_name: str) -> Optional[Task]:
+        """
+        Get overall status for a node (summarized by its tasks).
+        
+        Args:
+            node_name: Node name
+            
+        Returns:
+            Current active task or last task
+        """
+        tasks = self.get_node_tasks(node_name)
+        if not tasks:
+            return None
+            
+        # Return first non-completed/non-skipped task
+        for task in tasks:
+            if task.status not in [TaskStatus.COMPLETED, TaskStatus.SKIPPED]:
+                return task
+        return tasks[-1]
     
     def get_all_tasks(self) -> List[Task]:
         """
