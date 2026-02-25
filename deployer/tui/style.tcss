@@ -1,0 +1,111 @@
+/* Auto Deploy TUI Style */
+
+$primary: #00d4aa;
+$accent: #00a8cc;
+$success: #00ff00;
+$warning: #ffaa00;
+$error: #ff0055;
+$background: #0e1419;
+$surface: #1a1f26;
+$text: #e6e6e6;
+
+Screen {
+    background: $background;
+    color: $text;
+}
+
+Header {
+    background: $surface;
+    color: $primary;
+    text-style: bold;
+    dock: top;
+}
+
+Footer {
+    background: $surface;
+    color: $text;
+    dock: bottom;
+}
+
+#main-layout {
+    height: 100%;
+}
+
+.node-tree-container {
+    width: 30%;
+    border: tall $accent;
+    background: $surface;
+    padding: 1;
+}
+
+#progress-panel {
+    height: 10;
+    border: tall $success;
+    background: $surface;
+    padding: 1;
+    margin-bottom: 1;
+}
+
+#details-panel {
+    border: tall $warning;
+    background: $surface;
+    padding: 1;
+    min-height: 8;
+}
+
+#log-viewer {
+    height: 12;
+    border: tall $primary;
+    background: $surface;
+    padding: 1;
+    margin-top: 1;
+}
+
+/* Status Colors */
+.status-pending { color: grey; }
+.status-running { color: yellow; }
+.status-success { color: green; }
+.status-failed { color: red; }
+
+/* Tree Component Styling */
+Tree {
+    background: $surface;
+    padding: 0 1;
+}
+
+Tree > .tree--label {
+    color: $text;
+}
+
+/* Scrollbar */
+RichLog {
+    scrollbar-color: $accent;
+    scrollbar-color-hover: $primary;
+}
+
+/* Help Screen */
+#help-dialog {
+    padding: 1 2;
+    background: $surface;
+    color: $text;
+    border: thick $primary;
+    width: 60;
+    height: auto;
+    align: center middle;
+}
+
+#help-title {
+    text-style: bold;
+    color: $primary;
+    margin-bottom: 1;
+    content-align: center middle;
+}
+
+#help-text {
+    margin-bottom: 1;
+}
+
+#help-footer {
+    color: grey;
+    content-align: center middle;
+}

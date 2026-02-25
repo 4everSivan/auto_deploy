@@ -43,8 +43,9 @@ def version() -> None:
 @click.option('--software', '-s', multiple=True, help='Filter by software name(s)')
 @click.option('--dry-run', is_flag=True, help='Preview deployment without applying changes')
 @click.option('--yes', '-y', is_flag=True, help='Automatically confirm deployment')
+@click.option('--tui', is_flag=True, help='Use TUI interface for deployment')
 @click.pass_context
-def deploy(ctx: click.Context, node: tuple[str, ...], software: tuple[str, ...], dry_run: bool, yes: bool) -> None:
+def deploy(ctx: click.Context, node: tuple[str, ...], software: tuple[str, ...], dry_run: bool, yes: bool, tui: bool) -> None:
     config: Config = ctx.obj['__config']
     
     # Task Manager
@@ -80,6 +81,13 @@ def deploy(ctx: click.Context, node: tuple[str, ...], software: tuple[str, ...],
     # Executor
     executor = DeploymentExecutor(config, task_manager, logger, dry_run=dry_run)
     
+    # Launch TUI if requested
+    if tui:
+        from deployer.tui.app import AutoDeployApp
+        app = AutoDeployApp(executor, config_name=config.config_file)
+        app.run()
+        return
+
     # Progress display using rich.Live
     from rich.live import Live
     

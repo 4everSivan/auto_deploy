@@ -84,8 +84,17 @@
   - [x] T6.6.3: Implement missing Checker tests (PackageManager, Sudo)
   - [x] T6.6.4: Expand Installer tests
   - [x] T6.6.5: Achieve > 80% total coverage
-- [ ] Stage 7: TUI Interface (Week 3, First Half)
-  - [ ] T7.1-T7.10: TUI components
+- [x] Stage 7: TUI Interface (Week 3, First Half)
+  - [x] T7.1: Setup `textual` and basic app structure (`deployer/tui/app.py`)
+  - [x] T7.2: Implement `NodeTree` component
+  - [x] T7.3: Implement `ProgressPanel` component
+  - [x] T7.4: Implement `TaskDetails` component
+  - [x] T7.5: Implement `LogViewer` component
+  - [x] T7.6: Integrate `DeploymentExecutor` callbacks with TUI
+  - [x] T7.7: Implement TUI controls (Start/Pause/Resume/Stop)
+  - [x] T7.8: Update `ctl.py` to support TUI mode (`--tui` flag)
+  - [x] T7.9: Verify TUI functionality with manual tests
+  - [x] T7.10: Final polish and styling (TCSS)
 - [ ] Stage 8: Testing and Documentation (Week 3, Second Half)
   - [ ] T8.1-T8.8: Tests and docs
 - [ ] Stage 9: Packaging and Release (Week 3, End)
