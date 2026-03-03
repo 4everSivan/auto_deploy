@@ -108,5 +108,8 @@
   - [x] T8.6: Final polish of CLI/TUI feedback messages
   - [x] T8.7: Update project README.md
   - [x] T8.8: Final documentation review and consistency check
+  - [x] T8.9: Fix BaseInstaller playbook path mismatch
+  - [x] T8.10: Clean up test scratch files
+  - [x] T8.11: Resolve unit test collection errors
 - [ ] Stage 9: Packaging and Release (Week 3, End)
-  - [ ] T9.1-T9.5: Setup and release
+  - [/] T9.1: Submit PR and push changes

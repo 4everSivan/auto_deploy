@@ -106,7 +106,7 @@ class BaseInstaller(ABC):
         """
         # Get project root directory
         current_file = Path(__file__).resolve()
-        project_root = current_file.parent.parent
+        project_root = current_file.parent.parent.parent
         playbook_path = project_root / 'playbook' / playbook_name
         
         if not playbook_path.exists():
