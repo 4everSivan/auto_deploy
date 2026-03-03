@@ -111,5 +111,6 @@
   - [x] T8.9: Fix BaseInstaller playbook path mismatch
   - [x] T8.10: Clean up test scratch files
   - [x] T8.11: Resolve unit test collection errors
-- [ ] Stage 9: Packaging and Release (Week 3, End)
-  - [/] T9.1: Submit PR and push changes
+  - [x] T8.12: Fix CI/CD failure (missing dependencies and linting scope)
+- [x] Stage 9: Packaging and Release (Week 3, End)
+  - [x] T9.1: Submit PR and push changes
