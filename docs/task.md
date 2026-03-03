@@ -1,116 +1,116 @@
-# Auto Deploy Project - Design Documentation Tasks
+# Auto Deploy 项目 - 任务列表
 
-## Phase 1: Documentation Creation
-- [x] Create requirements specification document
-  - [x] Functional requirements
-  - [x] Non-functional requirements
-  - [x] Pre-installation checks specification
-- [x] Create technical design document
-  - [x] System architecture design
-  - [x] Module design and interfaces
-  - [x] Class hierarchy design
-  - [x] Database/storage design (if needed)
-  - [x] Error handling strategy
-- [x] Create implementation plan
-  - [x] Project structure reorganization
-  - [x] Development tasks breakdown
-  - [x] Priority and timeline
-  - [x] Testing strategy
+## 阶段 1: 文档创建
+- [x] 创建需求规格说明书
+  - [x] 功能需求
+  - [x] 非功能需求
+  - [x] 安装前检查规范
+- [x] 创建技术设计文档
+  - [x] 系统架构设计
+  - [x] 模块设计与接口
+  - [x] 类层次结构设计
+  - [x] 数据库/存储设计（如有需要）
+  - [x] 错误处理策略
+- [x] 创建实施计划
+  - [x] 项目结构重组
+  - [x] 开发任务分解
+  - [x] 优先级与时间线
+  - [x] 测试策略
 
-## Phase 2: User Review
-- [x] Request user review of all documents
-- [x] Incorporate feedback and revisions (All approved - LGTM)
+## 阶段 2: 用户评审
+- [x] 请求用户评审所有文档
+- [x] 吸纳反馈并进行修订（全部批准 - LGTM）
 
-## Phase 3: Implementation
-- [x] Stage 1: Basic Infrastructure (Week 1, First Half)
-  - [x] T1.1: Project structure setup
-  - [x] T1.2: Update requirements.txt
-  - [x] T1.3: Implement exceptions.py
-  - [x] T1.4: Implement utils.py
-  - [x] T1.5: Implement logger.py
-  - [x] T1.6: Setup unit test framework (20/20 tests passing)
-- [x] Stage 2: Configuration and Task Management (Week 1, Second Half)
-  - [x] T2.1: Extended Config class with new configuration options
-  - [x] T2.2: Implemented NodeConfig and SoftwareConfig dataclasses
-  - [x] T2.3: Implemented comprehensive configuration validation
-  - [x] T2.4: Updated configuration template with new fields
-  - [x] T2.5-T2.6: Config tests (23/23 passing, total 43/43 tests)
-- [x] Stage 3: Ansible Integration (Week 2, First Half)
-  - [x] T3.1: Implemented AnsibleWrapper for playbook execution
-  - [x] T3.2: Created BaseInstaller abstract class
-  - [x] T3.3: Implemented JavaInstaller (repository/URL/local)
-  - [x] T3.4: Implemented PythonInstaller (repository/source)
-  - [x] T3.5: Implemented ZookeeperInstaller (repository/URL)
-  - [x] T3.6: Created installer registry and factory
-  - [x] T3.7: Created basic Ansible playbooks
-  - [x] T3.8: Installer tests (12/12 passing, total 55/55 tests)
-- [x] Stage 4: Checker Implementation (Week 2, Middle)
-  - [x] T4.1: Created BaseChecker abstract class and CheckerManager
-  - [x] T4.2: Implemented ConnectivityChecker (SSH connection test)
-  - [x] T4.3: Implemented DiskSpaceChecker (disk space validation)
-  - [x] T4.4: Implemented MemoryChecker (memory availability)
-  - [x] T4.5: Implemented PortAvailabilityChecker (port conflict detection)
-  - [x] T4.6: Implemented SystemInfoChecker (OS and hardware info)
-  - [x] T4.7: Implemented PackageManagerChecker (apt/yum availability)
-  - [x] T4.8: Implemented SudoPrivilegeChecker (privilege escalation test)
-  - [x] T4.9: Checker tests (all passing)
-- [x] Stage 5: Execution Engine (Week 2, Second Half)
-  - [x] T5.1: Implemented DeploymentExecutor core logic
-  - [x] T5.2: Implemented multi-threaded concurrent control
-  - [x] T5.3: Implemented pause/resume/stop functionality
-  - [x] T5.4: Implemented callback mechanism
-  - [x] T5.5: Integrated Installer and Checker
-  - [x] T5.6: Implemented error handling and isolation
-  - [x] T5.7: Created TaskManager for task tracking
-  - [x] T5.8: Executor and TaskManager tests
-- [x] Stage 6: CLI Interface (Week 2, End)
-  - [x] T6.1: Extend ctl.py with deploy command
-  - [x] T6.2: Implement CLI deployment workflow
-  - [x] T6.3: Implement --dry-run mode
-  - [x] T6.4: Use Rich for output beautification
-  - [x] T6.5: Implement progress display and statistics
-- [x] GitHub CI/CD Integration
-  - [x] Create .github/workflows/ci.yml
-  - [x] Add linting and coverage checks
-- [x] Stage 6.5: Constitution Remediation (Week 2, Final Touch)
-  - [x] T6.5.1: Migrate models to Pydantic (Rule 2.7)
-  - [x] T6.5.2: Standardize type annotations & mypy strict (Rule 2.1)
-  - [x] T6.5.3: Refine error handling & exception chains (Rule 4.1)
-  - [x] T6.5.4: Implement async execution where applicable (Rule 5.1)
-  - [x] T6.5.5: Fix PEP 8 & linting issues (Rule 6.1, 6.3)
-- [x] Stage 6.6: Test Coverage Expansion (Week 3, Pre-TUI)
-  - [x] T6.6.1: Implement `test_ansible_wrapper.py`
-  - [x] T6.6.2: Expand `test_executor.py` for edge cases
-  - [x] T6.6.3: Implement missing Checker tests (PackageManager, Sudo)
-  - [x] T6.6.4: Expand Installer tests
-  - [x] T6.6.5: Achieve > 80% total coverage
-- [x] Stage 7: TUI Interface (Week 3, First Half)
-  - [x] T7.1: Setup `textual` and basic app structure (`deployer/tui/app.py`)
-  - [x] T7.2: Implement `NodeTree` component
-  - [x] T7.3: Implement `ProgressPanel` component
-  - [x] T7.4: Implement `TaskDetails` component
-  - [x] T7.5: Implement `LogViewer` component
-  - [x] T7.6: Integrate `DeploymentExecutor` callbacks with TUI
-  - [x] T7.7: Implement TUI controls (Start/Pause/Resume/Stop)
-  - [x] T7.8: Update `ctl.py` to support TUI mode (`--tui` flag)
-  - [x] T7.9: Verify TUI functionality with manual tests
-  - [x] T7.10: Final polish and styling (TCSS)
-  - [x] T7.11: Fix TUI output redirection and termination issues
-    - [x] Set `quiet=True` in AnsibleWrapper for TUI mode
-    - [x] Add `disable_console()` to DeployLogger to suppress TUI interference
-    - [x] Implement `cancel_callback` for ansible-runner to support clean quit
-- [x] Stage 8: Testing and Documentation (Week 3, Second Half)
-  - [x] T8.1: Implement TUI unit tests with `textual.test_client` (5/5 tests passing)
-  - [x] T8.2: Implement end-to-end integration tests (3/3 integration tests passing)
-  - [x] T8.3: Create comprehensive User Guide (`USER_GUIDE.md`)
-  - [x] T8.4: Create Developer Guide (`DEVELOPER_GUIDE.md`)
-  - [x] T8.5: Performance and resource usage audit
-  - [x] T8.6: Final polish of CLI/TUI feedback messages
-  - [x] T8.7: Update project README.md
-  - [x] T8.8: Final documentation review and consistency check
-  - [x] T8.9: Fix BaseInstaller playbook path mismatch
-  - [x] T8.10: Clean up test scratch files
-  - [x] T8.11: Resolve unit test collection errors
-  - [x] T8.12: Fix CI/CD failure (missing dependencies and linting scope)
-- [x] Stage 9: Packaging and Release (Week 3, End)
-  - [x] T9.1: Submit PR and push changes
+## 阶段 3: 实施
+- [x] 第 1 阶段: 基础设施搭建（第 1 周前半）
+  - [x] T1.1: 项目结构建立
+  - [x] T1.2: 更新 requirements.txt
+  - [x] T1.3: 实现 exceptions.py
+  - [x] T1.4: 实现 utils.py
+  - [x] T1.5: 实现 logger.py
+  - [x] T1.6: 设置单元测试框架（20/20 测试通过）
+- [x] 第 2 阶段: 配置与任务管理（第 1 周后半）
+  - [x] T2.1: 扩展 Config 类以支持新配置选项
+  - [x] T2.2: 实现 NodeConfig 和 SoftwareConfig 数据类
+  - [x] T2.3: 实现全面的配置验证
+  - [x] T2.4: 更新包含新字段的配置模板
+  - [x] T2.5-T2.6: 配置测试（23/23 通过,共计 43/43 测试）
+- [x] 第 3 阶段: Ansible 集成（第 2 周前半）
+  - [x] T3.1: 实现 AnsibleWrapper 用于 Playbook 执行
+  - [x] T3.2: 创建 BaseInstaller 抽象类
+  - [x] T3.3: 实现 JavaInstaller（仓库/URL/本地）
+  - [x] T3.4: 实现 PythonInstaller（仓库/源码）
+  - [x] T3.5: 实现 ZookeeperInstaller（仓库/URL）
+  - [x] T3.6: 创建安装器注册表与工厂
+  - [x] T3.7: 创建基础 Ansible Playbook
+  - [x] T3.8: 安装器测试（12/12 通过,共计 55/55 测试）
+- [x] 第 4 阶段: 检查器实现（第 2 周中）
+  - [x] T4.1: 创建 BaseChecker 抽象类与 CheckerManager
+  - [x] T4.2: 实现 ConnectivityChecker (SSH 连接测试)
+  - [x] T4.3: 实现 DiskSpaceChecker (磁盘空间验证)
+  - [x] T4.4: 实现 MemoryChecker (内存可用性)
+  - [x] T4.5: 实现 PortAvailabilityChecker (端口冲突检测)
+  - [x] T4.6: 实现 SystemInfoChecker (操作系统及硬件信息)
+  - [x] T4.7: 实现 PackageManagerChecker (apt/yum 可用性)
+  - [x] T4.8: 实现 SudoPrivilegeChecker (提权测试)
+  - [x] T4.9: 检查器测试 (全部通过)
+- [x] 第 5 阶段: 执行引擎（第 2 周后半）
+  - [x] T5.1: 实现 DeploymentExecutor 核心逻辑
+  - [x] T5.2: 实现多线程并发控制
+  - [x] T5.3: 实现暂停/恢复/停止功能
+  - [x] T5.4: 实现回调机制
+  - [x] T5.5: 集成 Installer 和 Checker
+  - [x] T5.6: 实现错误处理与隔离
+  - [x] T5.7: 创建 TaskManager 用于任务跟踪
+  - [x] T5.8: 执行器与任务管理器测试
+- [x] 第 6 阶段: CLI 界面（第 2 周末）
+  - [x] T6.1: 扩展 ctl.py 添加 deploy 命令
+  - [x] T6.2: 实现 CLI 部署流程
+  - [x] T6.3: 实现 --dry-run 模式
+  - [x] T6.4: 使用 Rich 进行输出美化
+  - [x] T6.5: 实现进度展示与统计
+- [x] GitHub CI/CD 集成
+  - [x] 创建 .github/workflows/ci.yml
+  - [x] 添加 Lint 与覆盖率检查
+- [x] 第 6.5 阶段: 宪法补救（第 2 周最后收尾）
+  - [x] T6.5.1: 将模型迁移至 Pydantic (规则 2.7)
+  - [x] T6.5.2: 标准化类型注解并启用 mypy 严格模式 (规则 2.1)
+  - [x] T6.5.3: 优化错误处理与异常链 (规则 4.1)
+  - [x] T6.5.4: 在适用处实现异步执行 (规则 5.1)
+  - [x] T6.5.5: 修复 PEP 8 与 Lint 问题 (规则 6.1, 6.3)
+- [x] 第 6.6 阶段: 测试覆盖率扩展（第 3 周 TUI 前）
+  - [x] T6.6.1: 实现 `test_ansible_wrapper.py`
+  - [x] T6.6.2: 为边界情况扩展 `test_executor.py`
+  - [x] T6.6.3: 实现缺失的检查器测试（PackageManager, Sudo）
+  - [x] T6.6.4: 扩展安装器测试
+  - [x] T6.6.5: 实现 > 80% 的总覆盖率
+- [x] 第 7 阶段: TUI 界面（第 3 周前半）
+  - [x] T7.1: 设置 `textual` 和基础应用结构 (`deployer/tui/app.py`)
+  - [x] T7.2: 实现 `NodeTree` 组件
+  - [x] T7.3: 实现 `ProgressPanel` 组件
+  - [x] T7.4: 实现 `TaskDetails` 组件
+  - [x] T7.5: 实现 `LogViewer` 组件
+  - [x] T7.6: 将 `DeploymentExecutor` 回调与 TUI 集成
+  - [x] T7.7: 实现 TUI 控制 (启动/暂停/恢复/停止)
+  - [x] T7.8: 更新 `ctl.py` 以支持 TUI 模式 (`--tui` 标志)
+  - [x] T7.9: 通过手动测试验证 TUI 功能
+  - [x] T7.10: 最终打磨与样式美化 (TCSS)
+  - [x] T7.11: 修复 TUI 输出重定向与终止问题
+    - [x] 在 TUI 模式下为 AnsibleWrapper 设置 `quiet=True`
+    - [x] 为 DeployLogger 添加 `disable_console()` 以抑制 TUI 干扰
+    - [x] 为 ansible-runner 实现 `cancel_callback` 以支持正常退出
+- [x] 第 8 阶段: 测试与文档（第 3 周后半）
+  - [x] T8.1: 使用 `textual.test_client` 实现 TUI 单元测试 (5/5 测试通过)
+  - [x] T8.2: 实现端到端集成测试 (3/3 集成测试通过)
+  - [x] T8.3: 创建全面的用户指南 (`USER_GUIDE.md`)
+  - [x] T8.4: 创建开发者指南 (`DEVELOPER_GUIDE.md`)
+  - [x] T8.5: 性能与资源使用审计
+  - [x] T8.6: 最终打磨 CLI/TUI 反馈消息
+  - [x] T8.7: 更新项目 README.md
+  - [x] T8.8: 最终文档评审与一致性检查
+  - [x] T8.9: 修复 BaseInstaller 剧本(playbook)路径不匹配问题
+  - [x] T8.10: 清理测试临时文件
+  - [x] T8.11: 解决单元测试收集错误
+  - [x] T8.12: 修复 CI/CD 失败 (缺少依赖和 Lint 范围)
+- [x] 第 9 阶段: 打包与发布（第 3 周结束）
+  - [x] T9.1: 提交 PR 并推送更改

@@ -1,74 +1,74 @@
-# Auto Deploy Developer Guide
+# Auto Deploy 开发指南
 
-This guide is for developers looking to understand the internal architecture of Auto Deploy, fix bugs, or extend its functionality.
+本指南旨在帮助开发人员了解 Auto Deploy 的内部架构、修复错误或扩展其功能。
 
-## 1. Architecture Overview
+## 1. 架构概览
 
-Auto Deploy follows a modular design with clear separation of concerns:
+Auto Deploy 采用了模块化设计,职责分明:
 
-- **Config (`deployer/config.py`)**: Responsible for loading, parsing, and validating YAML configuration files using Pydantic models.
-- **TaskManager (`deployer/task_manager.py`)**: Manages the deployment state machine. Converts configuration into discrete `Task` objects and tracks their lifecycle.
-- **DeploymentExecutor (`deployer/executor.py`)**: The engine of the application. Orchestrates concurrent execution across nodes using a thread pool.
-- **Installers (`deployer/installers/`)**: Modular components that handle the actual software installation logic via Ansible.
-- **Checkers (`deployer/checker/`)**: Background threads that perform pre-flight and health checks.
-- **TUI (`deployer/tui/`)**: A Textual-based interface for interactive monitoring and control.
+- **配置 (Config, `deployer/config.py`)**: 负责使用 Pydantic 模型加载、解析和验证 YAML 配置文件。
+- **任务管理器 (TaskManager, `deployer/task_manager.py`)**: 管理部署状态机。将配置转换为离散的 `Task` 对象并跟踪其生命周期。
+- **部署执行引擎 (DeploymentExecutor, `deployer/executor.py`)**: 应用程序的核心。使用线程池编排跨节点的并发执行。
+- **安装器 (Installers, `deployer/installers/`)**: 模块化组件,负责通过 Ansible 处理实际的软件安装逻辑。
+- **检查器 (Checkers, `deployer/checker/`)**: 后台线程,执行预检和健康检查。
+- **TUI (`deployer/tui/`)**: 基于 Textual 的界面,用于交互式监控和控制。
 
-## 2. Core Components
+## 2. 核心组件
 
 ### `DeploymentExecutor`
-The executor runs a loop that picks pending tasks and assigns them to node-specific threads. It handles:
-- Concurrency control.
-- Callback execution (for UI updates).
-- Cleanup and graceful shutdown.
+执行器运行一个循环,选取待处理的任务并将其分配给特定于节点的线程。它处理:
+- 并发控制。
+- 回调执行（用于 UI 更新）。
+- 清理和优雅闭。
 
 ### `AnsibleWrapper`
-A thin wrapper around `ansible-runner`. It abstracts the complexity of setting up environment variables and handling runner events. It supports a `cancel_callback` for immediate termination.
+对 `ansible-runner` 的薄包装。它抽象了设置环境变量和处理运行器事件的复杂性。它支持 `cancel_callback` 以实现立即终止。
 
-## 3. Extending the Tool
+## 3. 扩展工具
 
-### Adding a New Installer
-1. Create a new file in `deployer/installers/` (e.g., `mysql_installer.py`).
-2. Inherit from `BaseInstaller`.
-3. Implement `install()` and `verify()`:
+### 添加新的安装器
+1. 在 `deployer/installers/` 中创建新文件（例如 `mysql_installer.py`）。
+2. 继承自 `BaseInstaller`。
+3. 实现 `install()` 和 `verify()`:
    ```python
    def install(self) -> Dict[str, Any]:
-       # Use self.ansible.run_playbook(...) or run_command(...)
+       # 使用 self.ansible.run_playbook(...) 或 run_command(...)
        return {'status': 'success'}
    ```
-4. Update `DeploymentExecutor._get_installer` to recognize the new software name.
+4. 更新 `DeploymentExecutor._get_installer` 以识别新的软件名称。
 
-### Adding a New Checker
-1. Create a new class in `deployer/checker/` inheriting from `BaseChecker`.
-2. Implement `check()`:
+### 添加新的检查器
+1. 在 `deployer/checker/` 中创建一个继承自 `BaseChecker` 的新类。
+2. 实现 `check()`:
    ```python
    def check(self) -> bool:
-       # Return True if check passes
+       # 如果检查通过则返回 True
        return True
    ```
-3. Register it in `CheckerManager`.
+3. 在 `CheckerManager` 中注册它。
 
-## 4. Testing
+## 4. 测试
 
-### Running Tests
-We use `pytest` for all levels of testing:
+### 运行测试
+我们使用 `pytest` 进行各层级的测试:
 ```bash
-# Run all tests
+# 运行所有测试
 pytest
 
-# Run TUI tests only
+# 仅运行 TUI 测试
 pytest tests/test_tui.py
 
-# Run integration tests only
+# 仅运行集成测试
 pytest tests/test_integration.py
 ```
 
-### Mocking Guidelines
-- Mock `ansible_runner` to avoid real network calls.
-- Use `textual.test_client` for UI testing.
-- Always check `self.app.is_running` in TUI-related background callbacks to avoid `RuntimeError`.
+### Mock 指南
+- Mock `ansible_runner` 以避免真实的网络调用。
+- 使用 `textual.test_client` 进行 UI 测试。
+- 始终在与 TUI 相关的后台回调中检查 `self.app.is_running` 以避免 `RuntimeError`。
 
-## 5. Coding Standards
-- Follow PEP 8 style guidelines.
-- Use Pydantic for data validation.
-- All new features MUST include corresponding unit tests.
-- Maintain Google-style docstrings for all public classes and methods.
+## 5. 编码标准
+- 遵循 PEP 8 代码风格。
+- 使用 Pydantic 进行数据验证。
+- 所有新功能必须包含相应的单元测试。
+- 为所有公共类和方法维护 Google 风格的文档字符串（docstrings）。

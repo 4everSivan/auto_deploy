@@ -1,4 +1,4 @@
-# [fbase_inspector] 项目开发宪法
+# [Auto Deploy] 项目开发宪法
 
 # Version: 1.0, Ratified: 2026-02-01
 

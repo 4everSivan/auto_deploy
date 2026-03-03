@@ -1,4 +1,4 @@
-# Core dependencies
+# 核心依赖
 ansible_runner<=2.3.6
 ansible<=8.5.0
 click<=8.1.8
@@ -6,17 +6,17 @@ textual<=0.47.0
 pyyaml<=6.0.3
 pydantic>=2.0.0
 
-# UI and formatting
+# UI 与格式化
 rich>=13.0.0
 
-# Testing
+# 测试相关
 pytest>=7.4.0
 pytest-cov>=4.1.0
 pytest-mock>=3.11.1
 pytest-asyncio>=0.21.0
-# Linting
+# 代码检查
 flake8>=6.0.0
 ruff>=0.1.0
 
-# SSH connection
+# SSH 连接
 paramiko>=3.3.0
