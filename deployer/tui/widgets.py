@@ -13,6 +13,9 @@ from deployer.task_manager import TaskStatus, Task
 class NodeStatusTree(Tree):
     """Tree widget showing nodes and their tasks."""
     
+    def on_mount(self) -> None:
+        self.border_title = "Deployment Nodes"
+    
     def populate(self, nodes_config: List[Any], task_manager: Any) -> None:
         """Populate tree with nodes and tasks."""
         self.clear()
@@ -23,15 +26,15 @@ class NodeStatusTree(Tree):
             tasks = task_manager.get_node_tasks(node.name)
             for task in tasks:
                 icon = self._get_status_icon(task.status)
-                node_node.add_leaf(f"{icon} {task.software_name} [{task.status.value}]", data={'type': 'task', 'id': task.id})
+                node_node.add_leaf(f"{icon} {task.software_name} [{task.status.value}]", data={'type': 'task', 'id': task.task_id})
 
     def _get_status_icon(self, status: TaskStatus) -> str:
         icons = {
-            TaskStatus.PENDING: "⏸",
-            TaskStatus.RUNNING: "⏳",
-            TaskStatus.COMPLETED: "✓",
-            TaskStatus.FAILED: "✗",
-            TaskStatus.SKIPPED: "⊘"
+            TaskStatus.PENDING: "[grey]⏸[/grey]",
+            TaskStatus.RUNNING: "[yellow]⏳[/yellow]",
+            TaskStatus.COMPLETED: "[green]✓[/green]",
+            TaskStatus.FAILED: "[red]✗[/red]",
+            TaskStatus.SKIPPED: "[grey]⊘[/grey]"
         }
         return icons.get(status, "?")
 
@@ -44,24 +47,27 @@ class ProgressPanel(Vertical):
     tasks_done = reactive(0)
     total_tasks = reactive(0)
     
+    def on_mount(self) -> None:
+        self.border_title = "Overall Progress"
+
     def compose(self):
-        yield Label("Overall Progress", id="progress-title")
         yield ProgressBar(total=100, show_percentage=True, id="total-progress-bar")
-        yield Label("Stats:", id="stats-label")
         yield Static(id="stats-content")
 
     def watch_progress(self, progress: float) -> None:
         self.query_one(ProgressBar).progress = progress
 
-    def update_stats(self, nodes_done: int, total_nodes: int, tasks_done: int, total_tasks: int):
+    def update_stats(self, nodes_done: int, total_nodes: int, tasks_done: int, total_tasks: int, failed_tasks: int = 0, elapsed: str = "00:00:00"):
         self.nodes_done = nodes_done
         self.total_nodes = total_nodes
         self.tasks_done = tasks_done
         self.total_tasks = total_tasks
         
         content = (
-            f"Nodes: {nodes_done}/{total_nodes} completed\n"
-            f"Tasks: {tasks_done}/{total_tasks} completed"
+            f"Nodes:   {nodes_done}/{total_nodes} completed\n"
+            f"Tasks:   {tasks_done}/{total_tasks} completed\n"
+            f"Failed:  {failed_tasks}\n"
+            f"Elapsed: {elapsed}"
         )
         self.query_one("#stats-content").update(content)
 
@@ -70,8 +76,10 @@ class TaskDetailsPanel(Vertical):
     
     current_task = reactive(None)
     
+    def on_mount(self) -> None:
+        self.border_title = "Task Details"
+
     def compose(self):
-        yield Label("Task Details", id="details-title")
         yield Static("No active task", id="details-content")
 
     def watch_current_task(self, task: Optional[Task]) -> None:
@@ -80,7 +88,7 @@ class TaskDetailsPanel(Vertical):
                 f"Node: {task.node_name}\n"
                 f"Software: {task.software_name}\n"
                 f"Status: {task.status.value}\n"
-                f"Message: {task.message or 'N/A'}"
+                f"Message: {task.error_message or 'N/A'}"
             )
             self.query_one("#details-content").update(content)
         else:
@@ -91,6 +99,7 @@ class LogViewPanel(RichLog):
     
     def __init__(self, **kwargs):
         super().__init__(highlight=True, markup=True, **kwargs)
+        self.border_title = "Live Logs"
 
     def log_info(self, message: str):
         self.write(f"[white]INFO[/white]: {message}")

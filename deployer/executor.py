@@ -47,6 +47,7 @@ class DeploymentExecutor:
         
         # Ansible wrapper
         self.ansible = AnsibleWrapper(logger)
+        self.ansible.cancel_callback = self._cancel_callback
         
         # Control events
         self.lock = threading.Lock()
@@ -85,6 +86,15 @@ class DeploymentExecutor:
                 except Exception as e:
                     self.logger.error(f'Callback error for {event}: {e}')
     
+    def _cancel_callback(self) -> bool:
+        """
+        Callback for ansible-runner to check if execution should be canceled.
+        
+        Returns:
+            True if execution should be canceled
+        """
+        return self.stop_event.is_set()
+    
     def execute_all(self) -> List[Future[None]]:
         """
         Execute deployment for all nodes concurrently.
@@ -108,6 +118,15 @@ class DeploymentExecutor:
             
             self.logger.info(f'Submitted node {node.name} for execution')
         
+        # Trigger deployment completion when all futures are done (asynchronously)
+        def _wait_and_trigger():
+            from concurrent.futures import wait
+            wait(futures)
+            stats = self.task_manager.get_stats()
+            self._trigger_callback('on_deployment_complete', stats)
+            
+        threading.Thread(target=_wait_and_trigger, daemon=True).start()
+        
         return futures
     
     def _is_task_running(self, node_name: str) -> bool:
@@ -130,7 +149,7 @@ class DeploymentExecutor:
             # Check pause and stop events
             self.pause_event.wait()
             
-            if self.stop_event.is_set():
+            if self._cancel_callback():
                 task.skip('Deployment stopped by user')
                 self._trigger_callback('on_task_skip', task)
                 self.logger.warning(
@@ -213,6 +232,7 @@ class DeploymentExecutor:
                 break  # Stop this node's deployment
         
         self.logger.info(f'Completed deployment for node {node.name}', node=node.name)
+        self._trigger_callback('on_node_complete', node.name)
     
     def _run_checkers(self, node: NodeConfig, software: SoftwareConfig) -> Dict[str, Any]:
         """
@@ -328,7 +348,7 @@ class DeploymentExecutor:
         self.logger.info('Stopping deployment')
         self.stop_event.set()
         self.pause_event.set()  # Unpause if paused
-        self.executor.shutdown(wait=False)
+        self.executor.shutdown(wait=False, cancel_futures=True)
         self._trigger_callback('on_stop')
     
     def wait_completion(self, timeout: Optional[float] = None) -> None:

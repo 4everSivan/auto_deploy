@@ -95,6 +95,10 @@
   - [x] T7.8: Update `ctl.py` to support TUI mode (`--tui` flag)
   - [x] T7.9: Verify TUI functionality with manual tests
   - [x] T7.10: Final polish and styling (TCSS)
+  - [x] T7.11: Fix TUI output redirection and termination issues
+    - [x] Set `quiet=True` in AnsibleWrapper for TUI mode
+    - [x] Add `disable_console()` to DeployLogger to suppress TUI interference
+    - [x] Implement `cancel_callback` for ansible-runner to support clean quit
 - [ ] Stage 8: Testing and Documentation (Week 3, Second Half)
   - [ ] T8.1-T8.8: Tests and docs
 - [ ] Stage 9: Packaging and Release (Week 3, End)

@@ -11,9 +11,32 @@ from textual.widgets import Header, Footer, Static
 from textual.binding import Binding
 from textual.screen import ModalScreen
 
+import threading
+import logging
+
 from deployer.tui.widgets import NodeStatusTree, ProgressPanel, TaskDetailsPanel, LogViewPanel
 from deployer.executor import DeploymentExecutor
 from deployer.task_manager import TaskStatus, Task
+
+class TUIHandler(logging.Handler):
+    """Logging handler that redirects logs to the TUI LogViewPanel."""
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.formatter = logging.Formatter('%(levelname)s: %(message)s')
+
+    def emit(self, record):
+        try:
+            # Don't try to log if the app is already shutting down or closed
+            if not self.app.is_running:
+                return
+            msg = self.format(record)
+            self.app.call_from_thread(self.app.handle_log_record, record.levelname, msg)
+        except RuntimeError:
+            # Specifically handle "App is not running" which can happen during race-condition on exit
+            pass
+        except Exception:
+            self.handleError(record)
 
 class AutoDeployApp(App):
     """Auto Deploy TUI Application."""
@@ -41,6 +64,24 @@ class AutoDeployApp(App):
         self.title = f"Auto Deploy v0.1.0"
         self.sub_title = f"Config: {config_name}"
         self._register_executor_callbacks()
+        self.start_time: Optional[datetime] = None
+        
+        # Setup TUI logging handler
+        self.tui_handler = TUIHandler(self)
+        self.executor.logger.main_logger.addHandler(self.tui_handler)
+        # Add to existing node loggers and ensure future ones get it
+        for logger in self.executor.logger.node_loggers.values():
+            logger.addHandler(self.tui_handler)
+        
+        # Inject our handler into the DeployLogger's creation logic
+        # This is a bit hacky but effective for now
+        original_get_node_logger = self.executor.logger.get_node_logger
+        def wrapped_get_node_logger(node_name):
+            logger = original_get_node_logger(node_name)
+            if self.tui_handler not in logger.handlers:
+                logger.addHandler(self.tui_handler)
+            return logger
+        self.executor.logger.get_node_logger = wrapped_get_node_logger
 
     def _register_executor_callbacks(self) -> None:
         """Register callbacks with the executor to update UI."""
@@ -54,12 +95,12 @@ class AutoDeployApp(App):
         yield Header(show_clock=True)
         
         with Container(id="main-layout"):
-            with Horizontal():
+            with Horizontal(id="top-row"):
                 # Left Sidebar: Node Tree
                 yield NodeStatusTree("Cluster", id="node-tree", classes="node-tree-container")
                 
                 # Right Column: Progress and Details
-                with Vertical():
+                with Vertical(id="right-column"):
                     yield ProgressPanel(id="progress-panel")
                     yield TaskDetailsPanel(id="details-panel")
             
@@ -72,6 +113,12 @@ class AutoDeployApp(App):
         """Initialize UI after mounting components."""
         self._update_node_tree()
         self._update_progress()
+        self.set_interval(1, self._update_elapsed)
+
+    def _update_elapsed(self) -> None:
+        """Update the elapsed time display."""
+        if self.start_time:
+            self._update_progress()
 
     def _update_node_tree(self) -> None:
         """Update the node status tree."""
@@ -82,11 +129,22 @@ class AutoDeployApp(App):
         """Update global progress bars and stats."""
         stats = self.executor.task_manager.get_stats()
         panel = self.query_one(ProgressPanel)
+        
+        elapsed_str = "00:00:00"
+        if self.start_time:
+            delta = datetime.now() - self.start_time
+            seconds = int(delta.total_seconds())
+            hours, remainder = divmod(seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            elapsed_str = f"{hours:02}:{minutes:02}:{seconds:02}"
+
         panel.update_stats(
             nodes_done=stats['nodes_completed'],
             total_nodes=stats['total_nodes'],
             tasks_done=stats['tasks_completed'],
-            total_tasks=stats['total_tasks']
+            total_tasks=stats['total_tasks'],
+            failed_tasks=stats.get('tasks_failed', 0),
+            elapsed=elapsed_str
         )
         panel.progress = stats['percent_complete']
 
@@ -94,47 +152,66 @@ class AutoDeployApp(App):
 
     def _on_task_start(self, task: Task) -> None:
         """Called when a task starts."""
-        self.call_from_thread(self._handle_task_start, task)
+        try:
+            if self.is_running:
+                self.call_from_thread(self._handle_task_start, task)
+        except RuntimeError:
+            pass
 
     def _on_task_complete(self, task: Task) -> None:
         """Called when a task completes."""
-        self.call_from_thread(self._handle_task_complete, task)
+        try:
+            if self.is_running:
+                self.call_from_thread(self._handle_task_complete, task)
+        except RuntimeError:
+            pass
 
     def _on_node_complete(self, node_name: str) -> None:
         """Called when all tasks for a node are complete."""
-        self.call_from_thread(self._handle_node_complete, node_name)
+        try:
+            if self.is_running:
+                self.call_from_thread(self._handle_node_complete, node_name)
+        except RuntimeError:
+            pass
 
     def _on_deployment_complete(self, stats: Dict[str, Any]) -> None:
         """Called when the entire deployment is complete."""
-        self.call_from_thread(self._handle_deployment_complete, stats)
+        try:
+            if self.is_running:
+                self.call_from_thread(self._handle_deployment_complete, stats)
+        except RuntimeError:
+            pass
 
     # --- Main Thread UI Updates ---
 
     def _handle_task_start(self, task: Task) -> None:
         self.query_one(TaskDetailsPanel).current_task = task
-        self.query_one(LogViewPanel).log_info(f"Started: {task.node_name} - {task.software_name}")
         self._update_node_tree()
         self._update_progress()
 
     def _handle_task_complete(self, task: Task) -> None:
-        log_panel = self.query_one(LogViewPanel)
-        if task.status == TaskStatus.COMPLETED:
-            log_panel.log_success(f"Completed: {task.node_name} - {task.software_name}")
-        elif task.status == TaskStatus.FAILED:
-            log_panel.log_error(f"Failed: {task.node_name} - {task.software_name}: {task.error_message}")
-        
         self._update_node_tree()
         self._update_progress()
 
     def _handle_node_complete(self, node_name: str) -> None:
-        self.query_one(LogViewPanel).log_info(f"Node complete: {node_name}")
         self._update_node_tree()
         self._update_progress()
 
     def _handle_deployment_complete(self, stats: Dict[str, Any]) -> None:
-        self.query_one(LogViewPanel).log_success("All deployments finished!")
         self.notify("Deployment Complete", severity="information")
         self._update_progress()
+
+    def handle_log_record(self, levelname: str, message: str) -> None:
+        """Handle log record from TUIHandler (thread-safe)."""
+        log_panel = self.query_one(LogViewPanel)
+        if levelname == 'INFO':
+            log_panel.log_info(message)
+        elif levelname == 'WARNING':
+            log_panel.log_warning(message)
+        elif levelname == 'ERROR' or levelname == 'CRITICAL':
+            log_panel.log_error(message)
+        else:
+            log_panel.log_info(message)
 
     async def action_start(self) -> None:
         """Start deployment."""
@@ -142,6 +219,7 @@ class AutoDeployApp(App):
             self.notify("Deployment already running", severity="warning")
             return
             
+        self.start_time = datetime.now()
         self.notify("Deployment started")
         # Run executor in a separate thread so it doesn't block the UI
         import threading

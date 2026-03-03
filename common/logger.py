@@ -60,8 +60,8 @@ class DeployLogger:
         file_handler.setLevel(self.log_level)
         
         # Console handler
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(self.log_level)
+        self.console_handler = logging.StreamHandler()
+        self.console_handler.setLevel(self.log_level)
         
         # Formatter
         formatter = logging.Formatter(
@@ -69,12 +69,26 @@ class DeployLogger:
             datefmt='%Y-%m-%d %H:%M:%S'
         )
         file_handler.setFormatter(formatter)
-        console_handler.setFormatter(formatter)
+        self.console_handler.setFormatter(formatter)
         
         logger.addHandler(file_handler)
-        logger.addHandler(console_handler)
+        logger.addHandler(self.console_handler)
         
         return logger
+    
+    def suppress_console(self) -> None:
+        """Remove console handler from all loggers to stop stdout output."""
+        self.main_logger.removeHandler(self.console_handler)
+        for logger in self.node_loggers.values():
+            logger.removeHandler(self.console_handler)
+            
+    def enable_console(self) -> None:
+        """Add console handler back to all loggers."""
+        if self.console_handler not in self.main_logger.handlers:
+            self.main_logger.addHandler(self.console_handler)
+        for logger in self.node_loggers.values():
+            if self.console_handler not in logger.handlers:
+                logger.addHandler(self.console_handler)
     
     def get_node_logger(self, node_name: str) -> logging.Logger:
         """

@@ -29,36 +29,43 @@ Footer {
 
 #main-layout {
     height: 100%;
+    layout: vertical;
+}
+
+#top-row {
+    height: 50%;
 }
 
 .node-tree-container {
-    width: 30%;
+    width: 40%;
     border: tall $accent;
     background: $surface;
     padding: 1;
 }
 
+#right-column {
+    width: 60%;
+}
+
 #progress-panel {
-    height: 10;
+    height: 60%;
     border: tall $success;
     background: $surface;
     padding: 1;
-    margin-bottom: 1;
 }
 
 #details-panel {
+    height: 40%;
     border: tall $warning;
     background: $surface;
     padding: 1;
-    min-height: 8;
 }
 
 #log-viewer {
-    height: 12;
+    height: 50%;
     border: tall $primary;
     background: $surface;
     padding: 1;
-    margin-top: 1;
 }
 
 /* Status Colors */

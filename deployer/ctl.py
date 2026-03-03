@@ -83,6 +83,7 @@ def deploy(ctx: click.Context, node: tuple[str, ...], software: tuple[str, ...],
     
     # Launch TUI if requested
     if tui:
+        logger.suppress_console()
         from deployer.tui.app import AutoDeployApp
         app = AutoDeployApp(executor, config_name=config.config_file)
         app.run()

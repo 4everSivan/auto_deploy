@@ -177,6 +177,14 @@ class CheckerManager:
         skipped = 0
         
         for checker in self.checkers:
+            # Check for cancellation
+            if self.ansible.cancel_callback and self.ansible.cancel_callback():
+                self.logger.warning(
+                    f'Checks canceled for node {self.node_config.name}',
+                    node=self.node_config.name
+                )
+                break
+                
             try:
                 result = checker.check()
                 results.append(result.to_dict())

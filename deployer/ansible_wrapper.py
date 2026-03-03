@@ -4,7 +4,7 @@ Ansible wrapper for executing playbooks and ad-hoc commands.
 
 import os
 import tempfile
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Callable
 from pathlib import Path
 
 import ansible_runner  # type: ignore[import-untyped]
@@ -24,6 +24,7 @@ class AnsibleWrapper:
             logger: Logger instance for logging
         """
         self.logger = logger
+        self.cancel_callback: Optional[Callable[[], bool]] = None
     
     def run_playbook(
         self,
@@ -31,7 +32,8 @@ class AnsibleWrapper:
         inventory: Dict[str, Any],
         extra_vars: Optional[Dict[str, Any]] = None,
         node_name: Optional[str] = None,
-        check: bool = False
+        check: bool = False,
+        cancel_callback: Optional[Callable[[], bool]] = None
     ) -> Dict[str, Any]:
         """
         Run an Ansible playbook.
@@ -42,6 +44,7 @@ class AnsibleWrapper:
             extra_vars: Extra variables to pass to playbook
             node_name: Node name for logging
             check: Whether to run in check mode (dry run)
+            cancel_callback: Optional callback to cancel execution
             
         Returns:
             Dictionary with execution results
@@ -65,16 +68,29 @@ class AnsibleWrapper:
             )
             
             try:
+                # Prepare runner arguments
+                runner_args = {
+                    'private_data_dir': tmpdir,
+                    'playbook': playbook,
+                    'inventory': inventory_path,
+                    'extravars': extra_vars or {},
+                    'envvars': {
+                        'ANSIBLE_HOST_KEY_CHECKING': 'False',
+                        'ANSIBLE_SSH_ARGS': '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no',
+                        'LC_ALL': 'en_US.UTF-8',
+                        'LANG': 'en_US.UTF-8',
+                        'LC_CTYPE': 'en_US.UTF-8'
+                    },
+                    'quiet': True,
+                    'verbosity': 1,
+                    'cancel_callback': cancel_callback or self.cancel_callback
+                }
+                
+                if check:
+                    runner_args['cmdline'] = '--check'
+                
                 # Run playbook
-                result = ansible_runner.run(
-                    private_data_dir=tmpdir,
-                    playbook=playbook,
-                    inventory=inventory_path,
-                    extravars=extra_vars or {},
-                    quiet=False,
-                    verbosity=1,
-                    check=check
-                )
+                result = ansible_runner.run(**runner_args)
                 
                 # Check result
                 if result.status == 'successful':
@@ -89,18 +105,35 @@ class AnsibleWrapper:
                     }
                 else:
                     error_msg = f'Playbook failed with status: {result.status}'
-                    self.logger.error(error_msg, node=node_name)
                     
                     # Get failure details
                     failures = []
-                    if result.events:
-                        for event in result.events:
-                            if event.get('event') == 'runner_on_failed':
-                                failures.append(event.get('event_data', {}))
+                    # In some versions of ansible-runner, events is a generator, so we convert to list
+                    event_list = list(result.events)
+                    if event_list:
+                        for event in event_list:
+                            event_type = event.get('event')
+                            if event_type in ['runner_on_failed', 'runner_on_unreachable', 'runner_on_error', 'runner_on_skipped']:
+                                event_data = event.get('event_data', {})
+                                res = event_data.get('res', {})
+                                msg = res.get('msg', res.get('stderr', res.get('stdout', 'Unknown error')))
+                                failures.append(f"[{event_type}] {msg}")
                     
-                    raise AnsibleException(
-                        f'{error_msg}. RC: {result.rc}. Failures: {failures}'
-                    )
+                    if not failures:
+                        # Try to get something from stdout if no events matched
+                        stdout_content = result.stdout.read() if hasattr(result.stdout, 'read') else str(result.stdout)
+                        if stdout_content:
+                            # Get last 5 lines of stdout
+                            last_lines = '\n'.join(stdout_content.strip().split('\n')[-5:])
+                            failures.append(f"Stdout summary: {last_lines}")
+
+                    if failures:
+                        error_msg = f"{error_msg}. Details: {'; '.join(failures)}"
+                    else:
+                        error_msg = f"{error_msg}. (No specific failure details found)"
+                        
+                    self.logger.error(error_msg, node=node_name)
+                    raise AnsibleException(error_msg)
                     
             except Exception as e:
                 if isinstance(e, AnsibleException):
@@ -120,26 +153,28 @@ class AnsibleWrapper:
         ssh_key: Optional[str] = None,
         port: int = 22,
         become: bool = False,
-        become_user: str = 'root',
+        become_user: Optional[str] = None,
         become_password: Optional[str] = None,
         node_name: Optional[str] = None,
-        check: bool = False
+        check: bool = False,
+        cancel_callback: Optional[Callable[[], bool]] = None
     ) -> Dict[str, Any]:
         """
-        Run an ad-hoc command on a remote host.
+        Run an ad-hoc shell command.
         
         Args:
             host: Target host
-            command: Command to execute
+            command: Shell command to run
             user: SSH user
             password: SSH password
             ssh_key: Path to SSH private key
             port: SSH port
-            become: Whether to use privilege escalation
+            become: Whether to use sudo
             become_user: User to become
-            become_password: Password for privilege escalation
+            become_password: Sudo password
             node_name: Node name for logging
             check: Whether to run in check mode (dry run)
+            cancel_callback: Optional callback to cancel execution
             
         Returns:
             Dictionary with command results
@@ -184,16 +219,29 @@ class AnsibleWrapper:
                 node=node_name
             )
             
+            # Prepare runner arguments
+            runner_args = {
+                'private_data_dir': tmpdir,
+                'host_pattern': host,
+                'module': 'shell',
+                'module_args': command,
+                'inventory': inventory_path,
+                'envvars': {
+                    'ANSIBLE_HOST_KEY_CHECKING': 'False',
+                    'ANSIBLE_SSH_ARGS': '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no',
+                    'LC_ALL': 'en_US.UTF-8',
+                    'LANG': 'en_US.UTF-8',
+                    'LC_CTYPE': 'en_US.UTF-8'
+                },
+                'quiet': True,
+                'cancel_callback': cancel_callback or self.cancel_callback
+            }
+            
+            if check:
+                runner_args['cmdline'] = '--check'
+            
             try:
-                result = ansible_runner.run(
-                    private_data_dir=tmpdir,
-                    host_pattern=host,
-                    module='shell',
-                    module_args=command,
-                    inventory=inventory_path,
-                    quiet=True,
-                    check=check
-                )
+                result = ansible_runner.run(**runner_args)
                 
                 if result.status == 'successful':
                     # Get command output
@@ -213,9 +261,32 @@ class AnsibleWrapper:
                         'stderr': ''
                     }
                 else:
-                    raise AnsibleException(
-                        f'Command failed with status: {result.status}'
-                    )
+                    error_msg = f'Command failed with status: {result.status}'
+                    
+                    # Get failure details
+                    failure_details = []
+                    event_list = list(result.events)
+                    if event_list:
+                        for event in event_list:
+                            event_type = event.get('event')
+                            if event_type in ['runner_on_unreachable', 'runner_on_failed', 'runner_on_error']:
+                                event_data = event.get('event_data', {})
+                                res = event_data.get('res', {})
+                                msg = res.get('msg', res.get('stderr', res.get('stdout', 'Command execution failed')))
+                                failure_details.append(f"[{event_type}] {msg}")
+                    
+                    if not failure_details:
+                        stdout_content = result.stdout.read() if hasattr(result.stdout, 'read') else str(result.stdout)
+                        if stdout_content:
+                            last_lines = '\n'.join(stdout_content.strip().split('\n')[-5:])
+                            failure_details.append(f"Stdout summary: {last_lines}")
+
+                    if failure_details:
+                        error_msg = f"{error_msg}. Details: {'; '.join(failure_details)}"
+                    else:
+                        error_msg = f"{error_msg}. (No specific failure details found)"
+                        
+                    raise AnsibleException(error_msg)
                     
             except Exception as e:
                 if isinstance(e, AnsibleException):

@@ -207,6 +207,29 @@ class TaskManager:
         
         total_progress = sum(task.progress for task in self.tasks.values())
         return total_progress / len(self.tasks)
+
+    def get_stats(self) -> Dict[str, Any]:
+        """
+        Get aggregated statistics for TUI.
+        """
+        task_stats = self.get_statistics()
+        nodes = self.config.get_nodes()
+        total_nodes = len(nodes)
+        nodes_completed = 0
+        
+        for node in nodes:
+            tasks = self.get_node_tasks(node.name)
+            if tasks and all(t.status in [TaskStatus.COMPLETED, TaskStatus.SKIPPED] for t in tasks):
+                nodes_completed += 1
+                
+        return {
+            'total_tasks': task_stats['total'],
+            'tasks_completed': task_stats['completed'] + task_stats['skipped'],
+            'tasks_failed': task_stats['failed'],
+            'total_nodes': total_nodes,
+            'nodes_completed': nodes_completed,
+            'percent_complete': self.get_progress()
+        }
     
     def reset(self) -> None:
         """Reset all tasks to pending state."""
