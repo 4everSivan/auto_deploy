@@ -99,7 +99,14 @@
     - [x] Set `quiet=True` in AnsibleWrapper for TUI mode
     - [x] Add `disable_console()` to DeployLogger to suppress TUI interference
     - [x] Implement `cancel_callback` for ansible-runner to support clean quit
-- [ ] Stage 8: Testing and Documentation (Week 3, Second Half)
-  - [ ] T8.1-T8.8: Tests and docs
+- [x] Stage 8: Testing and Documentation (Week 3, Second Half)
+  - [x] T8.1: Implement TUI unit tests with `textual.test_client` (5/5 tests passing)
+  - [x] T8.2: Implement end-to-end integration tests (3/3 integration tests passing)
+  - [x] T8.3: Create comprehensive User Guide (`USER_GUIDE.md`)
+  - [x] T8.4: Create Developer Guide (`DEVELOPER_GUIDE.md`)
+  - [x] T8.5: Performance and resource usage audit
+  - [x] T8.6: Final polish of CLI/TUI feedback messages
+  - [x] T8.7: Update project README.md
+  - [x] T8.8: Final documentation review and consistency check
 - [ ] Stage 9: Packaging and Release (Week 3, End)
   - [ ] T9.1-T9.5: Setup and release

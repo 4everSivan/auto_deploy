@@ -95,6 +95,8 @@ python run.py -c deploy.yml --dry-run
 
 ## 📚 文档
 
+- [用户指南 (User Guide)](docs/USER_GUIDE.md) - **推荐阅读**: 详细的安装和使用教程
+- [开发指南 (Developer Guide)](docs/DEVELOPER_GUIDE.md) - 架构解析和扩展指南
 - [需求规格说明书](docs/requirements_specification.md)
 - [技术设计文档](docs/technical_design.md)
 - [实施计划](docs/implementation_plan.md)
@@ -105,62 +107,48 @@ python run.py -c deploy.yml --dry-run
 ```
 auto_deploy/
 ├── deployer/           # 核心部署模块
-│   ├── config.py      # 配置管理
+│   ├── config.py      # 配置管理 (Pydantic 验证)
 │   ├── ctl.py         # CLI 控制器
-│   ├── executor.py    # 执行引擎
-│   ├── task_manager.py # 任务管理器
-│   ├── ansible_wrapper.py # Ansible 封装
-│   ├── checker.py     # 安装前检查
-│   └── installers/    # 软件安装器
-├── tui/               # TUI 界面模块
-│   ├── screens/       # 界面屏幕
-│   └── widgets/       # 自定义组件
-├── common/            # 公共模块
-│   ├── logger.py      # 日志系统
-│   ├── exceptions.py  # 异常定义
-│   └── utils.py       # 工具函数
+│   ├── executor.py    # 并发执行引擎
+│   ├── task_manager.py # 状态管理
+│   ├── ansible_wrapper.py # ansible-runner 封装
+│   ├── checker/       # 预检查系统
+│   └── installers/    # 软件安装器 (Java, Python, Zookeeper)
+├── common/            # 公共模块 (日志, 异常, 工具)
 ├── playbook/          # Ansible Playbooks
-├── tests/             # 单元测试
+├── tests/             # 单元及集成测试 (133 个测试用例)
 └── docs/              # 项目文档
 ```
 
 ## 🧪 运行测试
 
 ```bash
-# 运行所有测试
-pytest tests/ -v
+# 运行所有单元测试和集成测试
+pytest
 
-# 运行测试并生成覆盖率报告
-pytest tests/ --cov=deployer --cov=common --cov-report=html
-
-# 查看覆盖率报告
-open htmlcov/index.html
+# 生成覆盖率报告
+pytest --cov=deployer --cov=common --cov-report=term-missing
 ```
 
 ## 🛠️ 开发状态
 
 ### ✅ 已完成
 
-- [x] 项目结构搭建
-- [x] 异常定义和工具函数
-- [x] 日志系统
-- [x] 单元测试框架 (20/20 测试通过)
+- [x] 项目结构 & 基础框架设计
+- [x] 基于 Pydantic 的配置验证系统
+- [x] 多线程并发执行引擎 (支持优先级控制)
+- [x] 现代化 TUI 交互界面 (Textual)
+- [x] Ansible 核心集成 (ansible-runner)
+- [x] 软件安装器: Java, Python, Zookeeper
+- [x] 完善的单元测试与集成测试 (133/133 通过)
+- [x] 用户手册与开发者文档
 
-### 🚧 进行中
+### 📅 计划中 (v0.2.0)
 
-- [ ] 配置管理扩展
-- [ ] 任务管理器
-- [ ] Ansible 集成
-- [ ] 安装前检查器
-- [ ] 执行引擎
-- [ ] TUI 界面
-
-### 📅 计划中
-
-- [ ] 更多软件支持 (MySQL, Redis, Nginx, Tomcat)
-- [ ] 自定义 Playbook 支持
-- [ ] 失败重试机制
-- [ ] 部署报告导出
+- [ ] 更多软件支持 (MySQL, Redis, Nginx)
+- [ ] 失败重试与断点续传机制
+- [ ] 部署报告自动生成 (PDF/HTML)
+- [ ] 容器化部署支持 (Docker)
 
 ## 🤝 贡献
 
@@ -168,10 +156,10 @@ open htmlcov/index.html
 
 ## 📝 版本历史
 
-- **v0.1.0** (开发中)
-  - 初始版本
+- **v0.1.0** (2024-03)
+  - 核心功能发布
   - 支持 Java, Python, Zookeeper 部署
-  - TUI 和 CLI 双模式
+  - 全新 TUI 界面支持
 
 ## 📄 许可证
 
@@ -180,7 +168,3 @@ MIT License
 ## 👥 作者
 
 Sivan
-
----
-
-**注意**: 本项目目前处于开发阶段,部分功能尚未完成。
