@@ -62,7 +62,7 @@ class TestAnsibleWrapper:
         mock_result.status = 'failed'
         mock_result.rc = 1
         mock_result.events = [
-            {'event': 'runner_on_failed', 'event_data': {'res': 'error details'}}
+            {'event': 'runner_on_failed', 'event_data': {'res': {'msg': 'error details'}}}
         ]
         mock_run.return_value = mock_result
         

@@ -240,10 +240,11 @@ class TestDeploymentExecutor:
 
     def test_execute_all_with_stop(self, executor):
         """Test execute_all stops submission if event is set."""
-        executor.config.get_nodes.return_value = [
-            Mock(spec=NodeConfig, name='n1'),
-            Mock(spec=NodeConfig, name='n2')
-        ]
+        n1 = Mock(spec=NodeConfig)
+        n1.name = 'n1'
+        n2 = Mock(spec=NodeConfig)
+        n2.name = 'n2'
+        executor.config.get_nodes.return_value = [n1, n2]
         
         executor.stop()
         futures = executor.execute_all()

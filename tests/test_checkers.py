@@ -66,6 +66,7 @@ class TestCheckerManager:
         )
         
         ansible_wrapper = Mock(spec=AnsibleWrapper)
+        ansible_wrapper.cancel_callback.return_value = False
         logger = Mock(spec=DeployLogger)
         
         return CheckerManager(node_config, ansible_wrapper, logger)

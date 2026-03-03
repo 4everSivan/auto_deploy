@@ -16,6 +16,8 @@ from common.logger import DeployLogger
 class AnsibleWrapper:
     """Wrapper for ansible_runner to execute playbooks and commands."""
     
+    cancel_callback: Optional[Callable[[], bool]] = None
+    
     def __init__(self, logger: DeployLogger):
         """
         Initialize Ansible wrapper.
@@ -116,7 +118,12 @@ class AnsibleWrapper:
                             if event_type in ['runner_on_failed', 'runner_on_unreachable', 'runner_on_error', 'runner_on_skipped']:
                                 event_data = event.get('event_data', {})
                                 res = event_data.get('res', {})
-                                msg = res.get('msg', res.get('stderr', res.get('stdout', 'Unknown error')))
+                                
+                                if isinstance(res, dict):
+                                    msg = res.get('msg', res.get('stderr', res.get('stdout', 'Unknown error')))
+                                else:
+                                    msg = str(res)
+                                    
                                 failures.append(f"[{event_type}] {msg}")
                     
                     if not failures:
