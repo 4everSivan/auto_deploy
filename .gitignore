@@ -210,6 +210,7 @@ __marimo__/
 deploy_data/
 test_deploy_data/
 test.yml
+test_ansible.py
 
 # IDE
 .idea
